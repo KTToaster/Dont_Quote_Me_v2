@@ -1,15 +1,16 @@
-<diagram program="umletino" version="15.1"><zoom_level>9</zoom_level><help_text>Space for diagram notes</help_text><element><id>UMLClass</id><coordinates><x>252</x><y>675</y><w>234</w><h>153</h></coordinates><panel_attributes>Discord_Bot::Bot
+<diagram program="umletino" version="15.1"><zoom_level>12</zoom_level><help_text>Space for diagram notes</help_text><element><id>UMLClass</id><coordinates><x>420</x><y>588</y><w>312</w><h>252</h></coordinates><panel_attributes>Discord_Bot::Bot
 --
 -API_KEY:str
 -CACHE_LENGTH:int
 -CACHE_TIMEOUT:int
 -clientCache:Hashmap&lt;string, Client&gt;
 --
-+storeClient(clientID:str):int
-+deleteClient(clientID:str):int
-+cacheClient(clientID:str):int
-+uncacheClient(clientID:str):int
-+checkCache():int</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>540</x><y>675</y><w>234</w><h>171</h></coordinates><panel_attributes>Discord_Bot::Client
++storeClient(clientID:str):Response
++deleteClient(clientID:str):Response
++cacheClient(clientID:str):Response
++uncacheClient(clientID:str):Response
++checkCache()
+-loadAPIKey()</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>804</x><y>588</y><w>312</w><h>252</h></coordinates><panel_attributes>Discord_Bot::Client
 --
 -ID:string
 -players:PlayerManager
@@ -18,35 +19,36 @@
 -scraper:Scraper
 -lastActivity:int
 --
--on_message(message:Message)
++on_message(message:Message)
 +sendMessage(channel:string,
 message:string)
-+help(params:list[string]):Response</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>540</x><y>504</y><w>234</w><h>90</h></coordinates><panel_attributes>Discord_Bot::Scraper
+-help(params:list[string]):Response
+-sync():Response</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>804</x><y>252</y><w>312</w><h>252</h></coordinates><panel_attributes>Discord_Bot::Scraper
 --
 
 --
 +scrapeQuotes(channelID:string, 
-from:int, to:int):list[Quote]
-+storeQuote(quote:Quote)
-</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>828</x><y>675</y><w>234</w><h>135</h></coordinates><panel_attributes>Discord_Bot::SettingsManager
+scrapeFrom:int, scrapeTo:int):list[Quote]
++storeQuote(quote:Quote):Response
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1188</x><y>588</y><w>312</w><h>252</h></coordinates><panel_attributes>Game_Manager::SettingsManager
 --
 -roundLimit:int
--gameType:enum[string]
--strictNames:boolean
+-gameType:enum
+-useStrictNames:boolean
+-quoteChannel:string
 --
-+setQuoteChannel(channel:String):Response
 +setRule(params:list[string]):Response
 +saveRuleset(params:list[string]):Response
 +loadRuleset(params:list[string]):Response
-+deleteRuleset(params:list[string[):Response</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1089</x><y>504</y><w>234</w><h>54</h></coordinates><panel_attributes>Helper::Response
++deleteRuleset(params:list[string[):Response</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1584</x><y>588</y><w>312</w><h>252</h></coordinates><panel_attributes>Helper::Response
 --
-ResponseType:enum([string])
-Message:string</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>549</x><y>351</y><w>234</w><h>81</h></coordinates><panel_attributes>Helper::Quote
+-responseCode:enum
+-message:string</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>420</x><y>252</y><w>312</w><h>252</h></coordinates><panel_attributes>Helper::Quote
 --
--QuoteSender:String
--QuoteString:String
--Quoted:String
--QuoteContext:String</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1089</x><y>675</y><w>234</w><h>153</h></coordinates><panel_attributes>Discord_Bot::PlayerManager
+-sender:String
+-quote:String
+-quoted:String
+-context:String</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1188</x><y>912</y><w>312</w><h>252</h></coordinates><panel_attributes>Game_Manager::PlayerManager
 --
 -playerAliases:Hashmap&lt;string,string&gt;
 --
@@ -57,9 +59,14 @@ Message:string</panel_attributes><additional_attributes></additional_attributes>
 +deleteAlias(params:list[string]):Response
 +removePlayer(params:list[string]):Response
 +clearPlayers():Response
-+clearAliases(params:list[string]):Response</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>828</x><y>504</y><w>234</w><h>90</h></coordinates><panel_attributes>Discord_Bot::StateManager
++clearAliases(params:list[string]):Response
++listPlayers():Response
++listActivePlayers():Response
++playerDetails(params:list[string]):Response</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1188</x><y>252</y><w>312</w><h>252</h></coordinates><panel_attributes>Game_Manager::StateManager
 --
 -availableQuotes:list[Quote]
+-settings:SettingsManager
+-players:PlayerManager
 --
 +nextRound():Response
 +endGame():Response
