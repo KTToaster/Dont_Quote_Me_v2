@@ -1,4 +1,4 @@
-<diagram program="umletino" version="15.1"><zoom_level>12</zoom_level><help_text>Space for diagram notes</help_text><element><id>UMLClass</id><coordinates><x>420</x><y>588</y><w>312</w><h>252</h></coordinates><panel_attributes>Discord_Bot::Bot
+<diagram program="umletino" version="15.1"><zoom_level>10</zoom_level><help_text>Space for diagram notes</help_text><element><id>UMLClass</id><coordinates><x>300</x><y>320</y><w>260</w><h>210</h></coordinates><panel_attributes>Discord_Bot::Bot
 --
 -API_KEY:str
 -CACHE_LENGTH:int
@@ -10,7 +10,7 @@
 +cacheClient(clientID:str):Response
 +uncacheClient(clientID:str):Response
 +checkCache()
--loadAPIKey()</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>804</x><y>588</y><w>312</w><h>252</h></coordinates><panel_attributes>Discord_Bot::Client
+-loadAPIKey()</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>620</x><y>320</y><w>260</w><h>210</h></coordinates><panel_attributes>Discord_Bot::Client
 --
 -ID:string
 -players:PlayerManager
@@ -23,14 +23,14 @@
 +sendMessage(channel:string,
 message:string)
 -help(params:list[string]):Response
--sync():Response</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>804</x><y>252</y><w>312</w><h>252</h></coordinates><panel_attributes>Discord_Bot::Scraper
+-sync():Response</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>620</x><y>40</y><w>260</w><h>210</h></coordinates><panel_attributes>Discord_Bot::Scraper
 --
 
 --
 +scrapeQuotes(channelID:string, 
 scrapeFrom:int, scrapeTo:int):list[Quote]
 +storeQuote(quote:Quote):Response
-</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1188</x><y>588</y><w>312</w><h>252</h></coordinates><panel_attributes>Game_Manager::SettingsManager
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>940</x><y>320</y><w>260</w><h>210</h></coordinates><panel_attributes>Game_Manager::SettingsManager
 --
 -roundLimit:int
 -gameType:enum
@@ -40,15 +40,15 @@ scrapeFrom:int, scrapeTo:int):list[Quote]
 +setRule(params:list[string]):Response
 +saveRuleset(params:list[string]):Response
 +loadRuleset(params:list[string]):Response
-+deleteRuleset(params:list[string[):Response</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1584</x><y>588</y><w>312</w><h>252</h></coordinates><panel_attributes>Helper::Response
++deleteRuleset(params:list[string[):Response</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1270</x><y>320</y><w>260</w><h>210</h></coordinates><panel_attributes>Helper::Response
 --
 -responseCode:enum
--message:string</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>420</x><y>252</y><w>312</w><h>252</h></coordinates><panel_attributes>Helper::Quote
+-message:string</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>300</x><y>40</y><w>260</w><h>210</h></coordinates><panel_attributes>Helper::Quote
 --
 -sender:String
 -quote:String
 -quoted:String
--context:String</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1188</x><y>912</y><w>312</w><h>252</h></coordinates><panel_attributes>Game_Manager::PlayerManager
+-context:String</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>940</x><y>590</y><w>260</w><h>210</h></coordinates><panel_attributes>Game_Manager::PlayerManager
 --
 -playerAliases:Hashmap&lt;string,string&gt;
 --
@@ -62,7 +62,7 @@ scrapeFrom:int, scrapeTo:int):list[Quote]
 +clearAliases(params:list[string]):Response
 +listPlayers():Response
 +listActivePlayers():Response
-+playerDetails(params:list[string]):Response</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1188</x><y>252</y><w>312</w><h>252</h></coordinates><panel_attributes>Game_Manager::StateManager
++playerDetails(params:list[string]):Response</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>940</x><y>40</y><w>260</w><h>210</h></coordinates><panel_attributes>Game_Manager::StateManager
 --
 -availableQuotes:list[Quote]
 -settings:SettingsManager
