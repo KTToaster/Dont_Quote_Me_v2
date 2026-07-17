@@ -12,6 +12,6 @@ class Response():
   """A dataclass object that holds a success/error code of a response, and a message that can be returned to the user. 
   """
   ## VALUES ##
-  responseCode:ResponseCode
-  message:str
+  responseCode:ResponseCode # The code that the operation responds with.
+  message:str               # The message attached to the code.
 # End of Response
