@@ -4,9 +4,11 @@ from discord.channel import TextChannel
 
 from App.Discord_Bot.Scraper import Scraper
 from App.Game_Manager.SettingsManager import SettingsManager
-from App.Helpers.Response import Response
+from App.Helpers.Response import *
 from App.Game_Manager.PlayerManager import PlayerManager
 from App.Game_Manager.StateManager import StateManager
+
+## GLOBALS ##
 
 ## CLASSES ##
 class Client():
@@ -86,17 +88,17 @@ class Client():
         self.sendMessage(message.channel, self.__help(tokenisedMessage[1:]))
         return
       case _:
-        self.sendMessage(message.channel, f"""Unknown command \"{tokenisedMessage[0]}\".
-                         Use \"/help\" for a list of all commands""")
+        self.sendMessage(message.channel, Response(ResponseCode.BAD_COMMAND, f"""Unknown command \"{tokenisedMessage[0]}\".
+                         Use \"/help\" for a list of all commands."""))
   # End of on_message()
 
-  async def sendMessage(self, channel:TextChannel, message:str) -> None:
+  async def sendMessage(self, channel:TextChannel, message:Response) -> None:
     """Sends a message to the discord guid associated with this client. 
     Args:
       channel (TextChannel): The channel to send the message to.
-      message (str): The message to send to the channel.
+      message (Response): The message to send to the channel.
     """
-    pass
+    channel.send(message.message)
   # End of sendMessage()
   
   ## PRIVATE METHODS ##
@@ -106,6 +108,25 @@ class Client():
       params (list[str] | None): A string broken into tokens indicating the parameters of the command. Defaults to None.
       Can include the command to get help for. Check Docs/command_grammar.md for full details.
     """
-    pass
+    paramCount = 0
+    try:
+      paramCount = len(params)
+    except TypeError:
+      return HELPDEFAULT
+    if(paramCount == 0):
+      return HELPDEFAULT
+    elif(paramCount == 1):
+      match(params[0].lower()):
+        case "players":
+          return HELPPLAYERS
+        case "settings":
+          return HELPSETTINGS
+        case "state" | "play":
+          return HELPSTATE
+        case _:
+          return Response(ResponseCode.BAD_PARAMETERS, f"""Invalid parameter {params[0]}.
+          Use \"/help\" for a list of all commands.""")
+    else:
+      return Response(ResponseCode.BAD_PARAMETERS, f"""Invalid number of parameters. Expected 0 or 1, received: {paramCount}.""")
   # End of help()
 # End of Client
