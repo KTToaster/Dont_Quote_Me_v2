@@ -1,6 +1,10 @@
 ## IMPORTS ##
 from App.Helpers.Response import Response
 
+## CONSTANTS ##
+MAX_PLAYERS = 255       # The maximum number of players each client is allowed
+MAX_ACTIVE_PLAYERS = 8  # The maximum number of players each client can have playing in a game
+
 ## CLASSES ##
 class PlayerManager():
   """Managers the players that can be quoted by the DQM bot.

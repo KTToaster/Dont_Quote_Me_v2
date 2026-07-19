@@ -3,6 +3,9 @@ from enum import Enum
 
 from App.Helpers.Response import Response
 
+## CONSTANTS ##
+MAX_RULESETS=10  # The maximum number of rulesets each server is allowed
+
 ## ENUMS ##
 class GameTypes(Enum):
   FREE_FOR_ALL=1

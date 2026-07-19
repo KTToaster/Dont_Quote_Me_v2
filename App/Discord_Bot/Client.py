@@ -27,15 +27,70 @@ class Client():
   
   
   ## PUBLIC METHODS ##
-  def on_message(self, message:Message) -> None:
+  async def on_message(self, message:Message) -> None:
     """Handles a message being sent to the discord server associated with this client.
     Args:
       message (Message): The message that has been sent to the client.
     """
-    pass
+    # Get commands and params
+    tokenisedMessage = message.content.split(" ")[1:]
+    if(len(tokenisedMessage) == 0):
+      self.sendMessage(message.channel, self.__help())
+      return
+    
+    # Match commands to their respective functions.
+    match(tokenisedMessage[0].lower):
+      case "/createplayer":     # Player Commands
+        self.sendMessage(message.channel, self.players.createPlayer(tokenisedMessage[1:]))
+        return
+      case "/createalias":
+        self.sendMessage(message.channel, self.players.createAlias(tokenisedMessage[1:]))
+        return
+      case "/addplayer":
+        self.sendMessage(message.channel, self.players.addPlayer(tokenisedMessage[1:]))
+        return
+      case "/deleteplayer":
+        self.sendMessage(message.channel, self.players.deletePlayer(tokenisedMessage[1:]))
+        return
+      case "/deletealias":
+        self.sendMessage(message.channel, self.players.deleteAlias(tokenisedMessage[1:]))
+        return
+      case "/listplayers":
+        self.sendMessage(message.channel, self.players.listPlayers(tokenisedMessage[1:]))
+        return
+      case "/listactive":
+        self.sendMessage(message.channel, self.players.listActivePlayers(tokenisedMessage[1:]))
+        return
+      case "/inspectplayer":
+        self.sendMessage(message.channel, self.players.playerDetails(tokenisedMessage[1:]))
+        return
+      case "/set":              # Settings Commands
+        self.sendMessage(message.channel, self.settings.setRule(tokenisedMessage[1:]))
+        return
+      case "/saveruleset":
+        self.sendMessage(message.channel, self.settings.saveRuleset(tokenisedMessage[1:]))
+        return
+      case "/loadruleset":
+        self.sendMessage(message.channel, self.settings.loadRuleset(tokenisedMessage[1:]))
+        return
+      case "/deleteruleset":
+        self.sendMessage(message.channel, self.settings.deleteRuleset(tokenisedMessage[1:]))
+        return
+      case "/start" | "/next":  # State Commands
+        self.sendMessage(message.channel, self.state.nextRound())
+        return
+      case "/end":
+        self.sendMessage(message.channel, self.state.endGame())
+        return
+      case "/help":             # Help Commands
+        self.sendMessage(message.channel, self.__help(tokenisedMessage[1:]))
+        return
+      case _:
+        self.sendMessage(message.channel, f"""Unknown command \"{tokenisedMessage[0]}\".
+                         Use \"/help\" for a list of all commands""")
   # End of on_message()
 
-  def sendMessage(self, channel:TextChannel, message:str) -> None:
+  async def sendMessage(self, channel:TextChannel, message:str) -> None:
     """Sends a message to the discord guid associated with this client. 
     Args:
       channel (TextChannel): The channel to send the message to.
