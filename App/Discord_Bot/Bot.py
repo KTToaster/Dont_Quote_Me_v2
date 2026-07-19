@@ -1,9 +1,9 @@
 ## IMPORTS ##
 import asyncio
-from time import time
-
 import discord
+from time import time
 from typing import overload
+from queue import Queue
 
 from Discord_Bot import *
 from discord.message import Message
@@ -93,7 +93,7 @@ class Bot(discord.Client):
     """Moves a client from the game's database into the cache.
     If the client is already in the cache, it resets it's timer.
     Args:
-      clientID (str): The ID of the client to cache. Should be the same as the guild ID provided by discord.
+      clientID (int): The ID of the client to cache. Should be the same as the guild ID provided by discord.
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
@@ -105,7 +105,7 @@ class Bot(discord.Client):
   def uncacheClient(clientID:int) -> Response:
     """Removes a client from the game's cache, but leaves it in the game's database.
     Args:
-      clientID (str): The ID of the client to uncache. Should be the same as the guild ID provided by discord.
+      clientID (int): The ID of the client to uncache. Should be the same as the guild ID provided by discord.
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
@@ -113,29 +113,29 @@ class Bot(discord.Client):
   # End of uncacheClient()
 
   @staticmethod
-  def getEvictionCandidates() -> list[int]:
+  def getEvictionCandidates() -> list[Client]:
     """Returns the oldest objects in the cache until there is enough space to add a new client.
     The oldest objects are not deleted by this function, and should be removed by the calling function as necessary.
     Removes any objects past their timeout, prior to finding the list of eviction candidates.
     Returns:
-      list[str]: The list of the oldest objects in the cache. 
+      list[Client]: The list of the oldest objects in the cache. 
     """
+
     # Remove anything timed out.
+    timedOut:list[int] = []
     for id, client in clientCache.items():
       if(time() - client.lastActivity > CACHE_TIMEOUT):
-        clientCache.pop(id)
-    
-    # Find eviction candidates
-    toEvict = len(clientCache) - (CACHE_LENGTH - 1)
-    evictionCandidates = []
+        timedOut.append(id) # Store timed out and delete after the dict has been iterated through - prevents RunTimeErrors.
+    for id in timedOut:
+      clientCache.pop(id)
 
-    for id, client in clientCache.items():
-      if(len(evictionCandidates) < toEvict):
-        evictionCandidates.append(id)
-      else:
-        # TODO find N oldest candidates
-        pass
-    return evictionCandidates 
+    # Find eviction candidates.
+    toEvict = len(clientCache) - (CACHE_LENGTH - 1)
+    if(toEvict <= 0): # Check if eviction is needed.
+      return []
+    evictionCandidates = sorted(clientCache.values(), key=lambda client: client.lastActivity)
+      
+    return evictionCandidates[:toEvict]
   # End of getEvictionCandidates()
 
   def listClients(self) -> list[int]:
