@@ -3,6 +3,9 @@ from enum import Enum
 
 from App.Helpers.Response import Response
 
+## CONSTANTS ##
+MAX_RULESETS=10  # The maximum number of rulesets each server is allowed
+
 ## ENUMS ##
 class GameTypes(Enum):
   FREE_FOR_ALL=1
@@ -28,18 +31,47 @@ class SettingsManager():
   
   ## PUBLIC METHODS ##
   def setRule(self, params:list[str]) -> Response:
+    """Updates a rule in the currently active ruleset. Does not change the rule in the game's database.
+    saveRuleset must be called for permanent changes.
+    Args:
+      params (list[str]): A string broken into tokens indicating the parameters of the command.
+      Should include the rule to change, and it's new value. Check Docs/command_grammar.md for full details.
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
+    """
     pass
   # End of setRule()
 
-  def saveRuleset(self, params:list[str]) -> Response:
+  def saveRuleset(self, params:list[str]|None=None) -> Response:
+    """Saves the current ruleset to the game's database.
+    Args:
+      params (list[str] | None): A string broken into tokens indicating the parameters of the command. Defaults to None.
+      Can include the name of the ruleset. Check Docs/command_grammar.md for full details.
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
+    """
     pass
   # End of saveRuleset()
 
   def loadRuleset(self, params:list[str]) -> Response:
+    """Sets the current ruleset to match one in the game's database.
+    Args:
+      params (list[str]): A string broken into tokens indicating the parameters of the command.
+      Should include the name of the ruleset. Check Docs/command_grammar.md for full details.
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
+    """
     pass
   # End of loadRuleset()
 
   def deleteRuleset(self, params:list[str]) -> Response:
+    """Removes a ruleset from the game's database. Supports wildcards.
+    Args:
+      params (list[str]): A string broken into tokens indicating the parameters of the command.
+      Should include the name of the ruleset. Check Docs/command_grammar.md for full details.
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
+    """
     pass
   # End of deleteRuleset()
 # End of SettingsManager

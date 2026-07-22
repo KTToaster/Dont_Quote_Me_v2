@@ -6,7 +6,7 @@ from App.Helpers.Response import Response
 
 ## CLASSES ##
 class StateManager():
-  """Handles the Game State of the current DQM session.
+  """Handles the game state of the current DQM game.
   """
   ## VALUES ##
   availableQuotes:list[Quote] # The quotes that can be used in the rounds.
@@ -20,15 +20,27 @@ class StateManager():
   
   ## PUBLIC METHODS ##
   def nextRound(self) -> Response:
+    """Runs the next round of the current game.
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
+    """
     pass
   # End of nextRound()
   
   def endGame(self) -> Response:
+    """Ends the current game, resetting the available quotes.
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
+    """
     pass
   # End of endGame()
 
   ## PRIVATE METHODS ##
   def __fetchQuotes(self) -> Response:
+    """Fetches all the quotes that can be used in the game, upon start.
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
+    """
     pass
   # End of __fetchQuotes()
 # End of StateManager
