@@ -21,6 +21,7 @@ class Client():
   state:StateManager        # The object that handles the game state for this guild.
   scraper:Scraper           # The object that can scrape this guild.
   lastActivity:int          # The last time the guild was communicated with. 
+  gameIndex:int             # Counts the number of games that have been played by this client.
   
   ## CONSTRUCTOR ##
   def __init__(self):

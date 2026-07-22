@@ -1,28 +1,26 @@
-<diagram program="umletino" version="15.1"><zoom_level>10</zoom_level><help_text>Space for diagram notes</help_text><element><id>UMLClass</id><coordinates><x>700</x><y>230</y><w>210</w><h>70</h></coordinates><panel_attributes>Client
+<diagram program="umletino" version="15.1"><zoom_level>10</zoom_level><help_text>Space for diagram notes</help_text><element><id>UMLClass</id><coordinates><x>360</x><y>220</y><w>210</w><h>70</h></coordinates><panel_attributes>Client
 --
-*guild_id         TEXT    &lt;PK&gt;*
-guild_name   TEXT
-game_index  INTEGER</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>690</x><y>570</y><w>210</w><h>130</h></coordinates><panel_attributes>Quote
+*guild_id         INTEGER    &lt;PK&gt;*
+game_index  INTEGER</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>360</x><y>560</y><w>210</w><h>130</h></coordinates><panel_attributes>Quote
 --
-*guild_id           STRING &lt;PF&gt;*
-*message_id    STRING &lt;PF&gt;*
+*guild_id           INTEGER &lt;PF&gt;*
+*message_id    INTEGER &lt;PF&gt;*
 player_name   STRING
 quote_string   STRING
-sender             STRING
 context            STRING
-game_index    INTEGER</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>690</x><y>380</y><w>210</w><h>130</h></coordinates><panel_attributes>Player
+game_index    INTEGER</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>360</x><y>370</y><w>210</w><h>130</h></coordinates><panel_attributes>Player
 --
-*guild_id           STRING   &lt;PF&gt;*
-*player_name STRING   &lt;PF&gt;*</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>950</x><y>380</y><w>210</w><h>130</h></coordinates><panel_attributes>Ruleset
+*guild_id           INTEGER &lt;PF&gt;*
+*player_name STRING   &lt;PF&gt;*</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>620</x><y>370</y><w>210</w><h>130</h></coordinates><panel_attributes>Ruleset
 --
-*guild_id            STRING   &lt;PF&gt;*
-*ruleset_name STRING &lt;PF&gt; *
-active                BOOLEAN
+*guild_id            INTEGER   &lt;PF&gt;*
+*ruleset_name STRING     &lt;PF&gt; *
+is_active            BOOLEAN
 round_limit      INTEGER
-game_type       ENUM
+game_type       INTEGER
 strict_names    BOOLEAN
-channel_id       STRING</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>420</x><y>380</y><w>210</w><h>130</h></coordinates><panel_attributes>Alias
+channel_id       STRING</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>90</x><y>370</y><w>210</w><h>130</h></coordinates><panel_attributes>Alias
 --
-*guild_id           STRING   &lt;PF&gt;*
+*guild_id           INTEGER &lt;PF&gt;*
 *alias_name     STRING  &lt;PF&gt;*
 player_name   STRING</panel_attributes><additional_attributes></additional_attributes></element></diagram>

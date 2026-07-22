@@ -3,10 +3,9 @@ import asyncio
 import discord
 from time import time
 from typing import overload
-from queue import Queue
+from discord.message import Message
 
 from Discord_Bot import *
-from discord.message import Message
 from App.Helpers.Response import Response
 
 ## CLASSES ##
