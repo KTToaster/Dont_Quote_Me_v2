@@ -1,5 +1,6 @@
 CREATE DATABASE IF NOT EXISTS dontquotemeDB;
 USE dontquotemeDB;
+
 CREATE TABLE clients(
   guild_id INTEGER PRIMARY KEY,
   game_index INTEGER

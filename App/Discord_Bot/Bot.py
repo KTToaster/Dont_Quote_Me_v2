@@ -5,6 +5,7 @@ from time import time
 from typing import overload
 from discord.message import Message
 
+from App.Database import Database
 from Discord_Bot import *
 from App.Helpers.Response import Response
 
@@ -45,7 +46,7 @@ class Bot(discord.Client):
       commandIndex = message.content.upper().index("!DQM") 
     except ValueError:
       return
-    if not(commandIndex == 0 or message.content[commandIndex-1] != '\\'):
+    if(commandIndex != 0 and message.content[commandIndex-1] == '\\'): # Ignore Escaped Command Words
       return
     message.content = message.content[commandIndex:]
 
@@ -57,7 +58,7 @@ class Bot(discord.Client):
       self.cacheClient(guildID)
     else:
       self.storeClient(guildID)
-      self.cacheClient(guildID)
+      clientCache[guildID] = Client(guildID, False)
     clientCache[guildID].on_message(message)
   # End of on_message() 
 
@@ -69,6 +70,7 @@ class Bot(discord.Client):
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
+    Database.send_query()
     # TODO Send SQL Command
     pass
   # End of storeClient()

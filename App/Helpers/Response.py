@@ -29,6 +29,14 @@ class Response():
   ## VALUES ##
   responseCode:ResponseCode # The code that the operation responds with.
   message:str|None          # The message attached to the code.
+
+  def responseString(self) -> str:
+    """Formats the response to show both the code and the message.
+    Returns:
+      str: The formatted response.
+    """
+    return f"{self.responseCode}: {self.message}"
+  # End of responseString()
 # End of Response
 
 ## GLOBALS ##

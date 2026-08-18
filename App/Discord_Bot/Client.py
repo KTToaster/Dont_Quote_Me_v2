@@ -1,7 +1,9 @@
 ## IMPORTS ##
 from discord.message import Message
 from discord.channel import TextChannel
+from time import time
 
+from App.Database import Database
 from App.Discord_Bot.Scraper import Scraper
 from App.Game_Manager.SettingsManager import SettingsManager
 from App.Helpers.Response import *
@@ -15,17 +17,28 @@ class Client():
   """Handles communication for a specific guild/Discord server.
   """
   ## VALUES ##
-  ID:str                    # The ID of the guild that is being communicated with
+  ID:int                    # The ID of the guild that is being communicated with.
   players:PlayerManager     # The object that handles the players for this guild.
   settings:SettingsManager  # The object that handles the settings for this guild.
   state:StateManager        # The object that handles the game state for this guild.
   scraper:Scraper           # The object that can scrape this guild.
-  lastActivity:int          # The last time the guild was communicated with. 
+  lastActivity:float        # The last time the guild was communicated with. 
   gameIndex:int             # Counts the number of games that have been played by this client.
   
   ## CONSTRUCTOR ##
-  def __init__(self):
-    pass
+  def __init__(self, id:int, loadVals:bool=True):
+    """Creates a Client Object.
+    Args:
+      id (int): The ID of the guild that is being communicated with.
+      loadVals (bool, optional): whether or not the client should load it's values from the database. Defaults to True.
+    """
+    self.ID = id
+    if(loadVals):
+      Database.selectQuery(f"SELECT * FROM clients WHERE guild_id == {id}")
+      pass
+    else:
+      self.gameIndex = 0
+    self.lastActivity = time()
   # End of __init__()
   
   
