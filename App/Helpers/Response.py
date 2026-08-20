@@ -14,6 +14,7 @@ class ResponseCode(Enum):
   NOT_MODIFIED=304    # A request has been made that has had no effect.
 
   # CLIENT ERRORS #
+  FORBIDDEN=403       # The client's request has been rejected as they do not have permission.
   NOT_FOUND=404       # A file that the User has requested could not be found.
   BAD_COMMAND=460     # Variation of BAD_REQUEST, a command the user sent was unknown. 
   BAD_PARAMETERS=461  # Variation of BAD_REQUEST, the parameters of a known command were invalid.

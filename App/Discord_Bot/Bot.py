@@ -17,17 +17,13 @@ class Bot(discord.Client):
   ## VALUES ##
   API_KEY:str # The API Key associated with the Discord Bot.
 
-  ## CONSTRUCTOR ##
-  def __init__(self):
-    pass
-  # End of __init__()
-
   ## PUBLIC METHODS ##
   @overload
   async def on_ready(self) -> None:
     """Initialisation steps to make when the Bot connects to the Discord API.
     """
-    pass
+    print("Don't Quote Me Bot Online")
+    self.__checkCache()
   # End of on_ready() 
 
   @overload
@@ -39,6 +35,8 @@ class Bot(discord.Client):
     # Ignore own messages
     if(message.author.id == self.user.id):
       return
+
+    print("Received Message:", " "*4, message)
     
     # Ignore anything before command word (!DQM)
     commandIndex:int
@@ -70,8 +68,7 @@ class Bot(discord.Client):
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    Database.send_query()
-    # TODO Send SQL Command
+    # TODO Insert client into database
     pass
   # End of storeClient()
 
@@ -85,8 +82,8 @@ class Bot(discord.Client):
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    # TODO: Send SQL Command
-    clientCache.pop(clientID)  
+    # TODO: Delete client from database
+    clientCache.pop(clientID)
   # End of deleteClient()
   
   @staticmethod
@@ -98,7 +95,9 @@ class Bot(discord.Client):
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    #TODO: Send SQL Command
+    #TODO: Get Object Details from Datbase
+    
+    #TODO: Create Client Object in Cache
     pass
   # End of cacheClient()
 
@@ -110,7 +109,8 @@ class Bot(discord.Client):
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    pass
+    #TODO: Update the database values with the cache
+    clientCache.pop(clientID)
   # End of uncacheClient()
 
   @staticmethod
@@ -141,6 +141,8 @@ class Bot(discord.Client):
 
   def listClients(self) -> list[int]:
     """Lists the IDs of all the clients in the database.
+    Returns:
+      list[int]: All the IDs of the clients in the database
     """
     # TODO Send SQL command
     pass

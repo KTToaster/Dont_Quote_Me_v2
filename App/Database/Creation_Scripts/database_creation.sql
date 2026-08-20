@@ -8,6 +8,7 @@ CREATE TABLE clients(
 CREATE TABLE players(
   guild_id INTEGER NOT NULL,
   player_name VARCHAR(255) NOT NULL,
+  is_active BOOLEAN,
   PRIMARY KEY(guild_id, player_name)
 );
 CREATE TABLE aliases(

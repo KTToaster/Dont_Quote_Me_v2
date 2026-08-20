@@ -1,16 +1,18 @@
 ## IMPORTS ##
-from App.Helpers.Response import Response
+from App.Helpers.Response import Response, ResponseCode
 
 ## CONSTANTS ##
-MAX_PLAYERS = 255       # The maximum number of players each client is allowed
-MAX_ACTIVE_PLAYERS = 8  # The maximum number of players each client can have playing in a game
+MAX_PLAYERS = 64        # The maximum number of players each client is allowed.
+MAX_ACTIVE_PLAYERS = 8  # The maximum number of players each client can have playing in a game.
+MAX_ALIASES = 16        # The maximum number of aliases each player can have, including their original name.
 
 ## CLASSES ##
 class PlayerManager():
   """Managers the players that can be quoted by the DQM bot.
   """
   ## VALUES ##
-  playerAliases:dict[str,str] # The players that can currently be quoted and their aliases.
+  allPlayers:dict[str,list[str]]  # All the players that are associated with this client and their aliases.
+  activePlayers:list[str]         # The players that can currently be quoted.
   
   ## CONSTRUCTOR ##
   def __init__(self):
@@ -26,7 +28,22 @@ class PlayerManager():
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    pass
+    pLen = len(params)
+
+    if(pLen == 0):
+      return Response(ResponseCode.BAD_PARAMETERS, "Invalid Parameters: No player name given.")
+    if(pLen > MAX_ALIASES):
+      return Response(ResponseCode.BAD_PARAMETERS, f"Invalid Parameters: Too many aliases given. Max: {MAX_ALIASES}.")
+    if(len(self.activePlayers.keys()) >= MAX_PLAYERS):
+      return Response(ResponseCode.FORBIDDEN, f"Forbidden: Maximum number of players reached. Max: {MAX_PLAYERS}.")
+    if(params[0] in self.allPlayers.keys()):
+      return Response(ResponseCode.BAD_PARAMETERS, f"Invalid Parameters: Player already exists")
+
+    self.allPlayers[params[0]] = [params[0]]
+    if(len(params) > 1):
+      self.createAlias(params)
+
+    return Response(ResponseCode.OK, f"Created Player \"{params[0]}\", with aliases {"..."}") # TODO
   # End of createPlayer()
   
   def createAlias(self, params:list[str]) -> Response:
@@ -37,7 +54,28 @@ class PlayerManager():
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    pass
+    pLen = len(params)
+
+    if(pLen == 0):
+      return Response(ResponseCode.BAD_PARAMETERS, "Invalid Parameters: No player name given.")
+    if(params[0] not in self.allPlayers.keys()):
+      return Response(ResponseCode.BAD_PARAMETERS, "Invalid Parameters: Player not found. use /listPlayers to see a list of all player names.")
+    if(pLen < 2):
+      return Response(ResponseCode.BAD_PARAMETERS, "Invalid Parameters: No aliases given.")
+    if(pLen-1 + len(self.activePlayers[params[0]]) > MAX_ALIASES):
+      return Response(ResponseCode.FORBIDDEN, f"Forbidden: Too many aliases given. Max: {MAX_ALIASES}.")
+
+    responseMessage = ""
+    for i in range(1, len(params)):
+      existsFlag = False
+      for name, aliases in self.allPlayers.items():
+        if(params[i] in aliases):
+          responseMessage+=f"Invalid Parameter: Could not add alias \"{params[i]}\" to player \"{params[0]}\" as player \"{name}\" owns the alias."
+      self.allPlayers[params[0]].append(params[i])
+    
+
+    return Response(ResponseCode.OK, f"Added Aliases {"..."} to player {params[0]}") # TODO
+
   # End of createAlias()
   
   def addPlayer(self, params:list[str]) -> Response:

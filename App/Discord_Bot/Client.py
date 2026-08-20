@@ -1,4 +1,5 @@
 ## IMPORTS ##
+import shlex
 from discord.message import Message
 from discord.channel import TextChannel
 from time import time
@@ -49,7 +50,7 @@ class Client():
       message (Message): The message that has been sent to the client.
     """
     # Get commands and params
-    tokenisedMessage = message.content.split(" ")[1:]
+    tokenisedMessage = shlex.split(message.content)[1:]
     if(len(tokenisedMessage) == 0):
       self.sendMessage(message.channel, self.__help())
       return
@@ -143,4 +144,10 @@ class Client():
     else:
       return Response(ResponseCode.BAD_PARAMETERS, f"""Invalid number of parameters. Expected 0 or 1, received: {paramCount}.""")
   # End of help()
+
+  async def __sync(self) -> None:
+    """Periodically updates the database with the changes made to the cached object.
+    """
+    pass
+  # End of __sync()
 # End of Client
