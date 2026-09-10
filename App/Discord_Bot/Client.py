@@ -35,7 +35,6 @@ class Client():
     """
     self.ID = id
     if(loadVals):
-      Database.selectQuery(f"SELECT * FROM clients WHERE guild_id == {id}")
       pass
     else:
       self.gameIndex = 0
@@ -93,9 +92,17 @@ class Client():
       case "/deleteruleset":
         self.sendMessage(message.channel, self.settings.deleteRuleset(tokenisedMessage[1:]))
         return
-      case "/start" | "/next":  # State Commands
-        self.sendMessage(message.channel, self.state.nextRound())
-        return
+      case "/start":
+        # Create a state if none exists
+        if(self.state == None):
+          self.state = StateManager(self.settings.activeRuleset, self.players.activePlayers)
+      case "/next":  # State Commands
+        if(self.state == None):
+          self.sendMessage("Cannot proceed to next round, no game exists.")
+        res = self.state.nextRound()
+        self.sendMessage(message.channel, res.message)
+        if(res.responseCode == ResponseCode.OK):
+          return
       case "/end":
         self.sendMessage(message.channel, self.state.endGame())
         return
@@ -144,6 +151,32 @@ class Client():
     else:
       return Response(ResponseCode.BAD_PARAMETERS, f"""Invalid number of parameters. Expected 0 or 1, received: {paramCount}.""")
   # End of help()
+
+  def __loadPlayers(self) -> Response:
+    pass
+  # End of __loadPlayers()
+
+  def __loadSettings(self) -> Response:
+    pass
+  # End of __loadSettings()
+
+  def __deloadPlayers(self) -> Response:
+    if(self.players == None):
+      return Response(ResponseCode.NOT_MODIFIED)
+    # TODO: cache and deload players
+    pass
+  # End of __deloadPlayers()
+
+  def __deloadSettings(self) -> Response:
+    if(self.settings == None):
+      return Response(ResponseCode.NOT_MODIFIED)
+    # TODO: cache and deload settings
+    pass
+  # End of __deloadSettings()
+
+  def __deloadState() -> None:
+    pass
+  # End of __deloadState()
 
   async def __sync(self) -> None:
     """Periodically updates the database with the changes made to the cached object.

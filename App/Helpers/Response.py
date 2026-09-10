@@ -12,6 +12,7 @@ class ResponseCode(Enum):
 
   # REDIRECTION #
   NOT_MODIFIED=304    # A request has been made that has had no effect.
+  REDIR_END=330       # A request to use next has been redirected to end the game.
 
   # CLIENT ERRORS #
   FORBIDDEN=403       # The client's request has been rejected as they do not have permission.
