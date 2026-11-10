@@ -24,239 +24,169 @@ class PlayerManager():
   # End of __init__()
   
   ## PUBLIC METHODS ##
-  def createPlayer(self, params:list[str]) -> Response:
-    """Stores a player in the game's database.
-    Args:
-      params (list[str]): A string broken into tokens indicating the parameters of the command.
-      Should include the player's name and aliases to add. Check Docs/command_grammar.md for full details.
-    Returns:
-      Response: Whether or not the operation was successful, and a message that can be returned to the user.
+  def createPlayer(self, player:str) -> Response:
+    """Adds a new player to the guild's list of players.
     """
-    pLen = len(params)
-
-    # Process parameters
-    if(pLen == 0):
-      return Response(ResponseCode.BAD_PARAMETERS, "Invalid Parameters: No player name given.")
-    if(pLen > MAX_ALIASES):
-      return Response(ResponseCode.BAD_PARAMETERS, f"Invalid Parameters: Too many aliases given. Max: {MAX_ALIASES}.")
-    if(len(self.activePlayers) >= MAX_PLAYERS):
-      return Response(ResponseCode.FORBIDDEN, f"Forbidden: Maximum number of players reached. Max: {MAX_PLAYERS}.")
-    # Check player name is unique
-    if(params[0] in self.allPlayers):
+    # TODO Add to operation log
+    
+    # Check player can be added
+    if player in self.allPlayers:
       return Response(ResponseCode.BAD_PARAMETERS, f"Invalid Parameters: Player already exists. Use /listplayers for a list of all players.")
+    if len(self.allPlayers) > MAX_ACTIVE_PLAYERS:
+      return Response(ResponseCode.FORBIDDEN, f"Forbidden: Maximum number of players reached. Max: {MAX_PLAYERS}.")
 
-    # Create player and aliases
-    self.allPlayers[params[0]] = [params[0]]
-    if(len(params) > 1):
-      self.createAlias(params)
-
-    return Response(ResponseCode.OK, f"Created Player \"{params[0]}\", with aliases {stringifyArray(params[1:])}") # TODO
+    # Add player
+    self.allPlayers[player] = [player]
+    return Response(ResponseCode.OK, f"Created player \"{player}\".")
   # End of createPlayer()
   
-  def createAlias(self, params:list[str]) -> Response:
-    """Adds an alias to an existing player, and stores it in the game's database. 
-    Args:
-      params (list[str]): A string broken into tokens indicating the parameters of the command.
-      Should include the player's name and the aliases to add. Check Docs/command_grammar.md for full details.
-    Returns:
-      Response: Whether or not the operation was successful, and a message that can be returned to the user.
+  def createAlias(self, player:str, alias:str, **flags:bool) -> Response:
+    """Adds an alias to an existing player.
     """
-    # Process parameters
-    pLen = len(params)
-    if(pLen == 0):
-      return Response(ResponseCode.BAD_PARAMETERS, "Invalid Parameters: No player name given.")
-    if(params[0] not in self.allPlayers):
-      return Response(ResponseCode.BAD_PARAMETERS, f"Invalid Parameters: Player \"{params[0]}\" not found. use /listplayers to see a list of all player names.")
-    if(pLen < 2):
-      return Response(ResponseCode.BAD_PARAMETERS, "Invalid Parameters: No aliases given.")
-    if(pLen-1 + len(self.activePlayers[params[0]]) > MAX_ALIASES):
-      return Response(ResponseCode.FORBIDDEN, f"Forbidden: Too many aliases given. Max: {MAX_ALIASES}.")
+    # TODO Add to operation log
 
-    # Add Aliases to player
-    message = ""
-    for i in range(1, len(params)):
-      for name, aliases in self.allPlayers.items():
-        if(params[i] in aliases): # Check Alias is unique
-          message+=f"Invalid Parameter: Could not add alias \"{params[i]}\" to player \"{params[0]}\" as player \"{name}\" owns the alias.\n"
-          continue
-        message += f"Added Alias \"{params[i]}\" to player \"{params[0]}\"\n"
-        self.allPlayers[params[0]].append(params[i])
-    return Response(ResponseCode.OK, message)
+    # Check alias can be added
+    if len(self.allPlayers.items) >= MAX_ALIASES:
+      return Response(ResponseCode.FORBIDDEN, f"Could not add \"{alias}\" to {player} as the alias limit has been reached.") 
+
+    # Check alias is unique
+    for name, existingAliases in self.allPlayers.items():
+      if alias in existingAliases:
+        if flags.get("force", False) and alias != name:
+          self.allPlayers[name].remove(alias)
+        else: 
+          return Response(ResponseCode.BAD_PARAMETERS, f"Could not add \"{alias}\" to {player}, as it already belongs to {name}.")
+
+    # Add Alias
+    self.allPlayers[player].append(alias)
+    return Response(ResponseCode.OK, f"Added alias \"{alias}\" to {player}.")
   # End of createAlias()
   
-  def addPlayer(self, params:list[str]) -> Response:
+  def addPlayer(self, pattern:str, **flags:bool) -> Response:
     """Adds a player to the list of people that can be quoted in the next game. Supports wildcards.
-    Args:
-      params (list[str]): A string broken into tokens indicating the parameters of the command.
-      Should include the player's name and a flag to check aliases as the name. Check Docs/command_grammar.md for full details.
-    Returns:
-      Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    # Process parameters.
-    params = [param for param in params if not param.startswith("-")]
-    if(len(params) == 0):
-      return Response(ResponseCode.BAD_PARAMETERS, "Invalid Parameters: No player name given.")
-    if(len(params) + len(self.activePlayers) > MAX_ACTIVE_PLAYERS):
-      return Response(ResponseCode.FORBIDDEN, f"Forbidden: Maximum number of active players reached. Max: {MAX_ACTIVE_PLAYERS}.")
-
-    # Process flags
-    flags = [flag.lower() for flag in params[1:] if flag.startswith("-")]
-    strict = "-strict" in flags or "-s" in flags
+    # TODO Add to operation log
 
     message = ""
-    matched = False
-    for pattern in params:
-      for player in self.__matchPlayers(pattern.lower(), strict):
-        if player in self.activePlayers:
-          message += f"Found Player \"{player}\", but they are already active."
-          continue
-        matched = True
-        message += f"Added \"{player}\" to the next session."
 
+    # Find players matching the pattern
+    for player in self.__matchPlayers(pattern, flags.get("strict", False), raw=flags.get("raw", False)):
+      if player not in self.activePlayers:
+        # Add Player
+        self.activePlayers.append(player)
+      message += f"Added \"{player}\" to the next session.\n"
+
+    if(message == ""):
+      return Response(ResponseCode.NOT_FOUND, f"No player(s) found matching \"{pattern}\".")
     return Response(ResponseCode.OK, message)
   # End of addPlayer()
 
-  def deletePlayer(self, params:list[str]) -> Response:
+  def deletePlayer(self, pattern:str, **flags:bool) -> Response:
     """Removes a player from the game's database, including all of their aliases. Supports wildcards. 
-    Args:
-      params (list[str]): A string broken into tokens indicating the parameters of the command.
-      Should include the player's name and a flag to check aliases as the name. Check Docs/command_grammar.md for full details.
-    Returns:
-      Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    # Process parameters
-    if(len(params) == 0):
-      return Response(ResponseCode.BAD_PARAMETERS, "Invalid Parameters: No player name given.")
-    # Process flags
-    flags = [flag.lower() for flag in params[1:]]
-    strict = "--strict" in flags or "-s" in flags
+    # TODO Add to operation log
 
-    # Remove players
-    message=""
-    for player in self.__matchPlayers(params[0], strict):
+    message = ""
+    # Find players matching the pattern
+    for player in self.__matchPlayers(pattern, flags.get("strict", False), raw=flags.get("raw", False)):
+      # Remove Players
       self.allPlayers.pop(player)
-      try: self.activePlayers.pop() # Remove player from activePlayers as well
-      except KeyError: pass
-      message += f"Deleted player \"{player}\".\n"
-
+      if player in self.activePlayers:
+        self.activePlayers.remove(player)
+        message += f"Deleted player \"{player}\".\n"
+        
     if(message == ""):
-      return Response(ResponseCode.NOT_FOUND, f"No player(s) found matching \"{params[0]}\".")
+      return Response(ResponseCode.NOT_FOUND, f"No player(s) found matching \"{pattern}\".")
     return Response(ResponseCode.OK, message)
   # End of deletePlayer()
 
-  def deleteAlias(self, params:list[str]) -> Response:
+  def deleteAlias(self, pattern:str, **flags) -> Response:
     """Removes an alias associated to a player from the game's database. Does not remove player names. Supports wildcards.
-    Args:
-      params (list[str]): A string broken into tokens indicating the parameters of the command.
-      Should include the alias to remove. Check Docs/command_grammar.md for full details.
-    Returns:
-      Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    # Process parameters
-    if(len(params) == 0):
-      return Response(ResponseCode.BAD_PARAMETERS, "Invalid Parameters: No alias given.")
-    pattern = params[0].lower()
+    # TODO Add to operation log
 
     message = ""
     for name, aliases in self.allPlayers.items():
-      if(fnmatch(name.lower(), pattern)): # Ignore player names.
+      if fnmatch(name.lower(), pattern):
+        message += f"Found {name} but could not remove it as it is a name, not an alias."
         continue
-      # Find alias
       for alias in aliases:
-        if(fnmatch(alias.lower(), pattern)):
+        if fnmatch(alias.lower(), pattern):
           self.allPlayers[name].pop(alias)
-          try: self.activePlayers.pop() # Remove alias from activePlayers as well
-          except KeyError: pass
           message += f"Removed alias \"{alias}\" from \"{name}\".\n"
 
     if(message == ""):
-      return Response(ResponseCode.NOT_FOUND, f"No alias(es) found matching \"{params[0]}\".")
+      return Response(ResponseCode.NOT_FOUND, f"No player(s) found matching \"{pattern}\".")
     return Response(ResponseCode.OK, message)
   # End of deleteAlias()
 
-  def removePlayer(self, params:list[str]) -> Response:
+  def removePlayer(self, pattern:str, **flags:bool) -> Response:
     """Removes a player from the list of people that can be quoted in the next game. Supports wildcards.
-    Args:
-      params (list[str]): A string broken into tokens indicating the parameters of the command.
-      Should include the player's name and a flag to check aliases as the name. Check Docs/command_grammar.md for full details.
-    Returns:
-      Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    # Process parameters
-    if(len(params) == 0):
-      return Response(ResponseCode.BAD_PARAMETERS, "Invalid Parameters: No player name given.")
-
-    # Process flags 
-    flags = [flag.lower() for flag in params[1:] if flag.startswith("-")]
-    strict = "--strict" in flags or "-s" in flags
+    # TODO Add to operation log
 
     message = ""
-    for player in self.__matchPlayers(params[0], strict, True):
+    for player in self.__matchPlayers(pattern, flags.get("strict", False), True, flags.get("raw", False)):
       self.activePlayers.pop()
       message += f"Removed {player}.\n"
     if(message == ""):
-      return Response(ResponseCode.NOT_MODIFIED, "No player(s) to remove. Use /listactive to see a list of all active players.")
+      return Response(ResponseCode.NOT_FOUND, f"No player(s) found matching \"{pattern}\".")
     return Response(ResponseCode.OK, message)
-  
   # End of removePlayer()
 
   def listPlayers(self) -> Response:
     """Lists all the players associated with this client in the game's database.
-    Returns:
-      Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
     return Response(ResponseCode.OK, stringifyArray(self.allPlayers.keys(), "\n"))
   # End of listPlayers()
 
   def listActivePlayers(self) -> Response:
     """Lists all the players that can be quoted in the next game.
-    Returns:
-      Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
     return Response(ResponseCode.OK, stringifyArray(self.activePlayers.keys(), "\n"))
   # End of listActivePlayers()
 
-  def playerDetails(self, params:list[str]) -> Response:
+  def playerDetails(self, pattern:str, **flags) -> Response:
     """Shows the details of a player, including all their aliases. Supports wildcards.
-    Args:
-      params (list[str]): A string broken into tokens indicating the parameters of the command.
-      Should include the player's name and a flag to check aliases as the name. Check Docs/command_grammar.md for full details.
-    Returns:
-      Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    flags = [flag.lower() for flag in params[1:] if flag.startswith("-")]
-    strict = "--strict" in flags or "-s" in flags
-
     message = ""
-    for player in self.__matchPlayers(params[0], strict):
+    for player in self.__matchPlayers(pattern, flags.get("strict", False), raw=flags.get("raw", False)):
       message += f"{player}: {"Active" if player in self.activePlayers else "Inactive"}\n"
       message += f"AKA: {stringifyArray(self.allPlayers[player])}\n\n"
+
     if(message == ""):
-      return Response(ResponseCode.NOT_FOUND, "No player information to display. Check your spelling or pattern format.")
+      return Response(ResponseCode.NOT_FOUND, f"No player(s) found matching \"{pattern}\".")
     return Response(ResponseCode.OK, message)
   # End of playerDetails()
 
+
   ## PRIVATE METHODS ##
-  def __matchPlayers(self, pattern:str, strict:bool=False, activeOnly=False) -> list[str]:
+  def __matchPlayers(self, pattern:str, strict:bool=False, activeOnly:bool=False, raw:bool=False) -> list[str]:
     """Finds the players that match a given pattern (Case insensitive).
     Args:
       pattern (str): The pattern to match a name or alias to. Supports * and ? wildcards (see fnmatch).
       strict (bool): Whether or not to only match against names, not aliases. Defaults to False.
       activeOnly (bool): Whether or not to only search for active players, Defaults to False.
+      raw (bool): Whether or not to treat the pattern as a raw string. Defaults to False.
     Returns:
       list[str]: The names (dict keys) of all matching players.
     """
     pattern = pattern.lower() 
     searching = self.activePlayers if activeOnly else searching = self.allPlayers
 
-    if(strict): # Search for names in keys
+    if strict: # Search for names in keys
+      if raw:
+        return [name.lower() for name in searching if name.lower == pattern]
       return [name.lower() for name in searching if fnmatch(name.lower(), pattern)]
 
     # Search for names in alias
     players = []
     for name, aliases in searching.items():
-      if(any(fnmatch(alias.lower(), pattern) for alias in aliases)):
-        players.append(name)
+      if raw:
+        if any(alias.lower() == pattern for alias in aliases):
+          players.append(name)
+      elif any(fnmatch(alias.lower(), pattern) for alias in aliases):
+          players.append(name)
     return players
   # End of __matchPlayers()
 # End of PlayerManager
