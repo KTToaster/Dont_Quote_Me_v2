@@ -10,8 +10,8 @@ from App.Game_Manager.SettingsManager import SettingsManager
 from App.Helpers.Response import *
 from App.Game_Manager.PlayerManager import PlayerManager
 from App.Game_Manager.StateManager import StateManager
+from App.Command_Parser.Parser import Parser
 
-## GLOBALS ##
 
 ## CLASSES ##
 class Client():
@@ -50,68 +50,90 @@ class Client():
     """
     # Get commands and params
     tokenisedMessage = shlex.split(message.content)[1:]
-    if(len(tokenisedMessage) == 0):
+    if len(tokenisedMessage) == 0:
       self.sendMessage(message.channel, self.__help())
       return
     
     # Match commands to their respective functions.
-    match(tokenisedMessage[0].lower):
-      case "/createplayer":     # Player Commands
-        self.sendMessage(message.channel, self.players.createPlayer(tokenisedMessage[1:]))
-        return
-      case "/createalias":
-        self.sendMessage(message.channel, self.players.createAlias(tokenisedMessage[1:]))
-        return
-      case "/addplayer":
-        self.sendMessage(message.channel, self.players.addPlayer(tokenisedMessage[1:]))
-        return
-      case "/deleteplayer":
-        self.sendMessage(message.channel, self.players.deletePlayer(tokenisedMessage[1:]))
-        return
-      case "/deletealias":
-        self.sendMessage(message.channel, self.players.deleteAlias(tokenisedMessage[1:]))
-        return
-      case "/listplayers":
-        self.sendMessage(message.channel, self.players.listPlayers(tokenisedMessage[1:]))
-        return
-      case "/listactive":
-        self.sendMessage(message.channel, self.players.listActivePlayers(tokenisedMessage[1:]))
-        return
-      case "/inspectplayer":
-        self.sendMessage(message.channel, self.players.playerDetails(tokenisedMessage[1:]))
-        return
-      case "/set":              # Settings Commands
-        self.sendMessage(message.channel, self.settings.setRule(tokenisedMessage[1:]))
-        return
-      case "/saveruleset":
-        self.sendMessage(message.channel, self.settings.saveRuleset(tokenisedMessage[1:]))
-        return
-      case "/loadruleset":
-        self.sendMessage(message.channel, self.settings.loadRuleset(tokenisedMessage[1:]))
-        return
-      case "/deleteruleset":
-        self.sendMessage(message.channel, self.settings.deleteRuleset(tokenisedMessage[1:]))
-        return
-      case "/start":
-        # Create a state if none exists
-        if(self.state == None):
-          self.state = StateManager(self.settings.activeRuleset, self.players.activePlayers)
-      case "/next":  # State Commands
-        if(self.state == None):
-          self.sendMessage("Cannot proceed to next round, no game exists.")
-        res = self.state.nextRound()
-        self.sendMessage(message.channel, res.message)
-        if(res.responseCode == ResponseCode.OK):
+    res:Response
+    try:
+      match(tokenisedMessage[0].lower):
+        case "/createplayer":     # Player Commands
+          name = Parser.parseName(tokenisedMessage[1:])
+          res = self.players.createPlayer(name)
+        case "/createalias":
+          name, aliases, flags = Parser.parseNameAliasesAndFlags(tokenisedMessage[1:])
+          res = self.players.createAlias(name, aliases, flags)
+        case "/addplayer":
+          name, flags = Parser.parseNameAndFlags(tokenisedMessage[1:])
+          res = self.players.addPlayer(name, flags)
+        case "/deleteplayer":
+          name, flags = Parser.parseNameAndFlags(tokenisedMessage[1:])
+          res = self.players.deletePlayer(name, flags)
+        case "/deletealias":
+          name, flags = Parser.parseNameAndFlags(tokenisedMessage[1:])
+          res = self.players.deleteAlias(name, flags)
+        case "/removeplayer":
+          name, flags = Parser.parseNameAndFlags(tokenisedMessage[1:])
+          res = self.players.removePlayer(name, flags)
+        case "/listplayers":
+          res = self.players.listPlayers()
+        case "/listactive":
+          res = self.players.listActivePlayers()
+        case "/inspectplayer":
+          name, flags = Parser.parseNameAndFlags(tokenisedMessage[1:])
+          res = self.players.inspectPlayer(name, flags)
+        
+        
+        case "/quotechannel":     # Settings Commands
+          channel = Parser.parseName(tokenisedMessage[1:])
+          res = self.settings.setQuoteChannel(channel)
+        case "/roundlimit":
+          limit = Parser.parseNumber(tokenisedMessage[1:])
+          res = self.settings.setRoundLimit(limit)
+        case "/allowaliases":
+          allow = Parser.parseBoolean(tokenisedMessage[1:])
+          res = self.settings.allowAliases(allow)
+        case "/scrapefrom":
+          timestamp = Parser.parseDateTime(tokenisedMessage[1:])
+          res = self.settings.setScrapeFrom(timestamp)
+        case "/scrapeto":
+          timestamp = Parser.parseDateTime(tokenisedMessage[1:])
+          res = self.settings.setScrapeTo(timestamp)
+        case "/scrapebetween":
+          fromstamp, tostamp = Parser.parseDateTimes(tokenisedMessage[1:])
+          res = self.settings.setScrapeBetween(fromstamp, tostamp)
+        case "/saveruleset":
+          name = Parser.parseName(tokenisedMessage[1:])
+          res = self.settings.saveRuleset(name)
+        case "/loadruleset":
+          name = Parser.parseName(tokenisedMessage[1:])
+          res = self.settings.loadRuleset(name)
+        case "/deleteruleset":
+          name, flags = Parser.parseNameAndFlags(tokenisedMessage[1:])
+          res = self.settings.deleteRuleset(name, flags)
+        case "/listrulesets":
+          res = self.settings.listRulesets()
+        case "/inspectruleset":
+          name, flags = Parser.parseNameAndFlags(tokenisedMessage[1:])
+          res = self.settings.inspectRuleset()
+
+
+        case "/start":
           return
-      case "/end":
-        self.sendMessage(message.channel, self.state.endGame())
-        return
-      case "/help":             # Help Commands
-        self.sendMessage(message.channel, self.__help(tokenisedMessage[1:]))
-        return
-      case _:
-        self.sendMessage(message.channel, Response(ResponseCode.BAD_REQUEST, f"""Unknown command \"{tokenisedMessage[0]}\".
-                         Use \"/help\" for a list of all commands."""))
+        case "/next":             # State Commands
+          return
+        case "/end":
+          return
+        case "/help":             # Help Commands
+          self.sendMessage(message.channel, self.__help(tokenisedMessage[1:]))
+          return
+        case _:
+          self.sendMessage(message.channel, Response(ResponseCode.BAD_REQUEST, f"""Unknown command \"{tokenisedMessage[0]}\".
+                           Use \"/help\" for a list of all commands."""))
+    except TypeError as e:
+      res = Response(ResponseCode.BAD_REQUEST, e)  
+    self.sendMessage(message.channel, res)
   # End of on_message()
 
   async def sendMessage(self, channel:TextChannel, message:Response) -> None:
@@ -122,35 +144,6 @@ class Client():
     """
     channel.send(message.message)
   # End of sendMessage()
-  
-  ## PRIVATE METHODS ##
-  def __help(self, params:list[str]|None=None) -> Response:
-    """Responds to a /help command
-    Args:
-      params (list[str] | None): A string broken into tokens indicating the parameters of the command. Defaults to None.
-      Can include the command to get help for. Check Docs/command_grammar.md for full details.
-    """
-    paramCount = 0
-    try:
-      paramCount = len(params)
-    except TypeError:
-      return HELPDEFAULT
-    if(paramCount == 0):
-      return HELPDEFAULT
-    elif(paramCount == 1):
-      match(params[0].lower()):
-        case "players":
-          return HELPPLAYERS
-        case "settings":
-          return HELPSETTINGS
-        case "state" | "play":
-          return HELPSTATE
-        case _:
-          return Response(ResponseCode.BAD_REQUEST, f"""Invalid parameter {params[0]}.
-          Use \"/help\" for a list of all commands.""")
-    else:
-      return Response(ResponseCode.BAD_REQUEST, f"""Invalid number of parameters. Expected 0 or 1, received: {paramCount}.""")
-  # End of help()
 
   def __loadPlayers(self) -> Response:
     pass
@@ -163,14 +156,14 @@ class Client():
   def __deloadPlayers(self) -> Response:
     if(self.players == None):
       return Response(ResponseCode.NOT_MODIFIED)
-    # TODO: cache and deload players
+    # TODO: save and deload players
     pass
   # End of __deloadPlayers()
 
   def __deloadSettings(self) -> Response:
     if(self.settings == None):
       return Response(ResponseCode.NOT_MODIFIED)
-    # TODO: cache and deload settings
+    # TODO: save and deload settings
     pass
   # End of __deloadSettings()
 

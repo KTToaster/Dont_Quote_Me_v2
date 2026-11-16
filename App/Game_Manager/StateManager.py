@@ -13,15 +13,15 @@ class StateManager():
   """Handles the game state of the current DQM game.
   """
   ## VALUES ##
-  lastQuote:Quote|None          # The last quote that was used in the game
-  availableQuotes:list[Quote]   # The quotes that can be used in the rounds.
-  ruleset:Ruleset               # The rules that the game has to follow.
-  players:dict[str, list[str]]  # The players that can be quoted.
-  roundNumber:int               # The round number the game is on.
-  newest:int                    # The timestamp of the most recent quote.
+  lastQuote:Quote|None        # The last quote that was used in the game
+  availableQuotes:list[Quote] # The quotes that can be used in the rounds.
+  ruleset:Ruleset             # The rules that the game has to follow.
+  players:dict[str,set[str]]  # The players that can be quoted.
+  roundNumber:int             # The round number the game is on.
+  newest:int                  # The timestamp of the most recent quote.
 
   ## CONSTRUCTOR ##
-  def __init__(self, ruleset:Ruleset, players:dict[str,list[str]]):
+  def __init__(self, ruleset:Ruleset, players:dict[str,set[str]]):
     self.lastQuote = None
     self.ruleset = ruleset
     self.players = players

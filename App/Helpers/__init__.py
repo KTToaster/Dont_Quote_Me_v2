@@ -1,4 +1,6 @@
-def stringifyArray(arr:list, delim:str=", ") -> str:
+from typing import Iterable
+
+def stringifyArray(arr:Iterable, delim:str=", ") -> str:
   """Creates a string showing all the values of an array.
   Params:
     arr (list): The array to stringify.

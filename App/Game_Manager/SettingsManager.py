@@ -78,17 +78,17 @@ class SettingsManager():
     pass
   # End of loadRuleset()
 
-  def deleteRuleset(self, pattern:str, **flags) -> Response:
+  def deleteRuleset(self, pattern:str, *flags:str) -> Response:
     """Removes a ruleset from the game's database. Supports wildcards.
     Args:
       pattern (str): The pattern of rulesets to delete.
-      **flags:
+      *flags (str):
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
     message = ""
     for ruleset in self.rulesets:
-      if (flags.get("raw", False) and fnmatch(ruleset, pattern)) or pattern == ruleset:
+      if ((not "raw" in flags) and fnmatch(ruleset, pattern)) or pattern == ruleset:
         if ruleset == "Default":
           message += "Cannot delete Default ruleset.\n"
           continue
@@ -108,19 +108,18 @@ class SettingsManager():
     return Response(ResponseCode.OK, message)
   # End of listRulesets()
 
-  def rulesetDetails(self, name:str|None, **flags) -> Response:
+  def inspectRuleset(self, pattern:str|None, *flags) -> Response:
     """Returns the details of a ruleset from the game's database. Supports wildcards.
     Args:
       pattern (str): The pattern of rulesets to retrieve details on. Returns details on the active ruleset if None.
-      **flags:
+      *flags (str):
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
     # TODO
     message = f"{self.rulesets[self.activeRuleset]}\n"
     return Response(Response.OK, message)
-  # End of rulesetDetails()
-
+  # End of inspectRuleset()
 
   def setQuoteChannel(self, channel:str) -> Response:
     """Sets the channel that the bot scrapes quote from.
@@ -135,14 +134,14 @@ class SettingsManager():
     return Response(ResponseCode.OK, f"Set Quotes Channel to \"{channel}\".")
   # End of setQuoteChannel()
 
-  def setRoundLimit(self, limit:int | None) -> Response:
+  def setRoundLimit(self, limit:int|None) -> Response:
     """Limits the number of rounds the next session can have.
     Args:
       limit (int | None): The number of rounds the next session can have.
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    if limit == None:
+    if limit == None or limit < 0:
       self.rulesets[self.activeRuleset].roundLimit = -1
       return Response(ResponseCode.OK, "Removed round Limit")
     self.rulesets[self.activeRuleset].roundLimit = limit
