@@ -110,7 +110,7 @@ class Client():
         self.sendMessage(message.channel, self.__help(tokenisedMessage[1:]))
         return
       case _:
-        self.sendMessage(message.channel, Response(ResponseCode.BAD_COMMAND, f"""Unknown command \"{tokenisedMessage[0]}\".
+        self.sendMessage(message.channel, Response(ResponseCode.BAD_REQUEST, f"""Unknown command \"{tokenisedMessage[0]}\".
                          Use \"/help\" for a list of all commands."""))
   # End of on_message()
 
@@ -146,10 +146,10 @@ class Client():
         case "state" | "play":
           return HELPSTATE
         case _:
-          return Response(ResponseCode.BAD_PARAMETERS, f"""Invalid parameter {params[0]}.
+          return Response(ResponseCode.BAD_REQUEST, f"""Invalid parameter {params[0]}.
           Use \"/help\" for a list of all commands.""")
     else:
-      return Response(ResponseCode.BAD_PARAMETERS, f"""Invalid number of parameters. Expected 0 or 1, received: {paramCount}.""")
+      return Response(ResponseCode.BAD_REQUEST, f"""Invalid number of parameters. Expected 0 or 1, received: {paramCount}.""")
   # End of help()
 
   def __loadPlayers(self) -> Response:

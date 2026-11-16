@@ -26,25 +26,30 @@ class PlayerManager():
   ## PUBLIC METHODS ##
   def createPlayer(self, player:str) -> Response:
     """Adds a new player to the guild's list of players.
+    Args:
+      player (str): The name of the player to create.
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    # TODO Add to operation log
-    
     # Check player can be added
     if player in self.allPlayers:
-      return Response(ResponseCode.BAD_PARAMETERS, f"Invalid Parameters: Player already exists. Use /listplayers for a list of all players.")
+      return Response(ResponseCode.BAD_REQUEST, f"Invalid Parameters: Player already exists. Use /listplayers for a list of all players.")
     if len(self.allPlayers) > MAX_ACTIVE_PLAYERS:
       return Response(ResponseCode.FORBIDDEN, f"Forbidden: Maximum number of players reached. Max: {MAX_PLAYERS}.")
 
-    # Add player
     self.allPlayers[player] = [player]
     return Response(ResponseCode.OK, f"Created player \"{player}\".")
   # End of createPlayer()
   
   def createAlias(self, player:str, alias:str, **flags:bool) -> Response:
     """Adds an alias to an existing player.
+    Args:
+      player (str): The name of the player to add an alias to.
+      alias (str): The alias to add to the player.
+      **flags (bool):
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    # TODO Add to operation log
-
     # Check alias can be added
     if len(self.allPlayers.items) >= MAX_ALIASES:
       return Response(ResponseCode.FORBIDDEN, f"Could not add \"{alias}\" to {player} as the alias limit has been reached.") 
@@ -55,7 +60,7 @@ class PlayerManager():
         if flags.get("force", False) and alias != name:
           self.allPlayers[name].remove(alias)
         else: 
-          return Response(ResponseCode.BAD_PARAMETERS, f"Could not add \"{alias}\" to {player}, as it already belongs to {name}.")
+          return Response(ResponseCode.BAD_REQUEST, f"Could not add \"{alias}\" to {player}, as it already belongs to {name}.")
 
     # Add Alias
     self.allPlayers[player].append(alias)
@@ -64,9 +69,12 @@ class PlayerManager():
   
   def addPlayer(self, pattern:str, **flags:bool) -> Response:
     """Adds a player to the list of people that can be quoted in the next game. Supports wildcards.
+    Args:
+      pattern (str): The pattern used to identify players that can be quoted in the next game.
+      **flags (bool):
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    # TODO Add to operation log
-
     message = ""
 
     # Find players matching the pattern
@@ -82,10 +90,13 @@ class PlayerManager():
   # End of addPlayer()
 
   def deletePlayer(self, pattern:str, **flags:bool) -> Response:
-    """Removes a player from the game's database, including all of their aliases. Supports wildcards. 
+    """Removes a player from the game's database, including all of their aliases. Supports wildcards.
+    Args:
+      pattern (str): The pattern used to identify players that should be deleted.
+      **flags (bool):
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    # TODO Add to operation log
-
     message = ""
     # Find players matching the pattern
     for player in self.__matchPlayers(pattern, flags.get("strict", False), raw=flags.get("raw", False)):
@@ -102,9 +113,12 @@ class PlayerManager():
 
   def deleteAlias(self, pattern:str, **flags) -> Response:
     """Removes an alias associated to a player from the game's database. Does not remove player names. Supports wildcards.
+    Args:
+      pattern (str): The pattern used to identify the aliases to be deleted.
+      **flags (bool):
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    # TODO Add to operation log
-
     message = ""
     for name, aliases in self.allPlayers.items():
       if fnmatch(name.lower(), pattern):
@@ -122,9 +136,12 @@ class PlayerManager():
 
   def removePlayer(self, pattern:str, **flags:bool) -> Response:
     """Removes a player from the list of people that can be quoted in the next game. Supports wildcards.
+    Args:
+      pattern (str): The pattern used to identify players that should not be quoted in the next game.
+      **flags (bool):
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    # TODO Add to operation log
-
     message = ""
     for player in self.__matchPlayers(pattern, flags.get("strict", False), True, flags.get("raw", False)):
       self.activePlayers.pop()
@@ -141,13 +158,18 @@ class PlayerManager():
   # End of listPlayers()
 
   def listActivePlayers(self) -> Response:
-    """Lists all the players that can be quoted in the next game.
+    """Lists all the players that will be quoted in the next game.
     """
     return Response(ResponseCode.OK, stringifyArray(self.activePlayers.keys(), "\n"))
   # End of listActivePlayers()
 
   def playerDetails(self, pattern:str, **flags) -> Response:
     """Shows the details of a player, including all their aliases. Supports wildcards.
+    Args:
+      pattern (str): The pattern used to identify players that can be quoted in the next game.
+      **flags (bool):
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
     message = ""
     for player in self.__matchPlayers(pattern, flags.get("strict", False), raw=flags.get("raw", False)):

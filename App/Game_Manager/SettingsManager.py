@@ -1,24 +1,17 @@
 ## IMPORTS ##
 from dataclasses import dataclass
 from enum import Enum
+from datetime import datetime as dt
+from fnmatch import fnmatch
 
 from App.Helpers.Response import Response, ResponseCode
 
 ## CONSTANTS ##
-MAX_RULESETS=10  # The maximum number of rulesets each server is allowed
-
+MAX_RULESETS=8  # The maximum number of rulesets each server is allowed
 
 ## ENUMS ##
 class GameType(Enum):
   FREE_FOR_ALL=1
-  FIFTY_FIFTY=2
-
-GAMETYPES_STR = {
-  "ffa":GameType.FREE_FOR_ALL,
-  "free-for-all":GameType.FREE_FOR_ALL,
-  "fifty-fifty":GameType.FIFTY_FIFTY,
-  "50/50":GameType.FIFTY_FIFTY
-}
 
 @dataclass
 class Ruleset():
@@ -36,18 +29,18 @@ class SettingsManager():
   """
   ## VALUES ##
   rulesets:dict[str,Ruleset]
-  activeRuleset:Ruleset
+  activeRuleset:str
 
   ## CONSTRUCTOR ##
   def __init__(self, rulesets:dict[str,Ruleset]|None=None, quotesChannel:str|None=None, activeRuleset:str="Default"):
-    if(rulesets == None and quotesChannel == None):
+    if rulesets == None and quotesChannel == None:
       raise AttributeError("Rulesets and channel cannot both be None.")
-    elif(rulesets == None):
+    elif rulesets == None:
       self.rulesets = {"Default": Ruleset(quotesChannel=quotesChannel, name="Default")}
-      self.activeRuleset = self.rulesets["Default"]
+      self.activeRuleset = "Default"
 
     self.rulesets = rulesets
-    if(activeRuleset in rulesets): 
+    if activeRuleset in rulesets: 
       self.activeRuleset = self.rulesets[activeRuleset]
     else:
       self.activeRuleset = self.rulesets["Default"]
@@ -55,149 +48,157 @@ class SettingsManager():
   # End of __init__()
 
   ## PUBLIC METHODS ##
-  def setRule(self, params:list[str]) -> Response:
-    """Updates a rule in the currently active ruleset. Does not change the rule in the game's database.
-    saveRuleset must be called for permanent changes.
-    Args:
-      params (list[str]): A string broken into tokens indicating the parameters of the command.
-      Should include the rule to change, and it's new value. Check Docs/command_grammar.md for full details.
-    Returns:
-      Response: Whether or not the operation was successful, and a message that can be returned to the user.
-    """
-    match(params[0].lower):
-      case "quoteschannel":
-        return self.__quotesChannel(params[1:])
-      case "roundlimit":
-        return self.__roundLimit(params[1:])
-      case "gametype":
-        return self.__gameType(params[1:])
-      case "allowaliases":
-        return self.__allowAliases(params[1:])
-      case "scrapefrom":
-        return self.__scrapeFrom(params[1:])
-      case "scrapeto":
-        return self.__scrapeTo(params[1:])
-      case _:
-        return Response(ResponseCode.BAD_COMMAND, f"Unknown Command: \"{params[0]}\". Use \"/help settings\" for a list of all settings commands.")
-  # End of setRule()
-
-  def saveRuleset(self, params:list[str]|None=None) -> Response:
+  def saveRuleset(self, name:str|None) -> Response:
     """Saves the current ruleset to the game's database.
     Args:
-      params (list[str] | None): A string broken into tokens indicating the parameters of the command. Defaults to None.
-      Can include the name of the ruleset. Check Docs/command_grammar.md for full details.
+      name (str | None): The name to save the ruleset as. Overwrites the current ruleset if none.
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    if(len(params) == 0):
+    if name == None or name == "":
       self.rulesets[self.activeRuleset.name] = self.activeRuleset
       return Response(ResponseCode.OK, f"Updated \"{self.activeRuleset.name}\" to current rules.")
-    if(not params[0] in self.rulesets and self.rulesets+1 > MAX_RULESETS):
-      return Response(ResponseCode.FORBIDDEN, f"Could not create new ruleset \"{params[0]}\" from current rules as the maximum number of rulesets ({MAX_RULESETS}) has been reached.")
-    self.rulesets[params[0]] = self.activeRuleset
+    if not name in self.rulesets and self.rulesets+1 > MAX_RULESETS:
+      return Response(ResponseCode.FORBIDDEN, f"Could not create new ruleset \"{name}\" from current rules as the maximum number of rulesets ({MAX_RULESETS}) has been reached.")
+    self.rulesets[name] = self.activeRuleset
     return Response(ResponseCode.OK, f"Updated \"{self.activeRuleset.name}\" to current rules.")
   # End of saveRuleset()
 
-  def loadRuleset(self, params:list[str]) -> Response:
+  def loadRuleset(self, name:str) -> Response:
     """Sets the current ruleset to match one in the game's database.
     Args:
-      params (list[str]): A string broken into tokens indicating the parameters of the command.
-      Should include the name of the ruleset. Check Docs/command_grammar.md for full details.
+      name (str): The name of the ruleset to set as the current ruleset.
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    
+    if not name in self.rulesets:
+      return Response(ResponseCode.BAD_REQUEST, f"Could not load ruleset \"{name}\" as it does not exist.")
+    self.activeRuleset = name
+    return Response(ResponseCode.OK, f"Using ruleset \"{name}\".")
     pass
   # End of loadRuleset()
 
-  def deleteRuleset(self, params:list[str]) -> Response:
+  def deleteRuleset(self, pattern:str, **flags) -> Response:
     """Removes a ruleset from the game's database. Supports wildcards.
     Args:
-      params (list[str]): A string broken into tokens indicating the parameters of the command.
-      Should include the name of the ruleset. Check Docs/command_grammar.md for full details.
+      pattern (str): The pattern of rulesets to delete.
+      **flags:
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    pass
+    message = ""
+    for ruleset in self.rulesets:
+      if (flags.get("raw", False) and fnmatch(ruleset, pattern)) or pattern == ruleset:
+        if ruleset == "Default":
+          message += "Cannot delete Default ruleset.\n"
+          continue
+      self.rulesets.pop(ruleset)
+      message += f"Deleted ruleset \"{ruleset}\".\n"
+    return Response(ResponseCode.OK, message)
   # End of deleteRuleset()
 
   def listRulesets(self) -> Response:
-    pass
+    """Returns the names of all the rulesets associated with this guild.
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
+    """
+    message = ""
+    for ruleset in self.rulesets:
+      message += ruleset + "\n"
+    return Response(ResponseCode.OK, message)
   # End of listRulesets()
 
-  def rulesetDetails(self, params:list[str]) -> Response:
+  def rulesetDetails(self, name:str|None, **flags) -> Response:
+    """Returns the details of a ruleset from the game's database. Supports wildcards.
+    Args:
+      pattern (str): The pattern of rulesets to retrieve details on. Returns details on the active ruleset if None.
+      **flags:
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
+    """
+    # TODO
     message = f"{self.rulesets[self.activeRuleset]}\n"
-
     return Response(Response.OK, message)
   # End of rulesetDetails()
 
-  ## PRIVATE METHODS ##
-  def __quotesChannel(self, params:list[str]) -> Response:
-    """Sets the channel that the bot scrapes quote from.
-    Args:
-      params (list[str]): A string broken into tokens indicating the parameters of the command.
-      Should include the id of the channel to scrape from. Check Docs/command_grammar.md for full details.
-    Returns:
-      Response: Whether or not the operation was successful, and a message that can be returned to the user.
-    """
-    if(len(params) == 0):
-      return Response(ResponseCode.BAD_PARAMETERS, "Invalid Parameters: No Channel ID given.")
-    # TODO: Check if channel exists
-    self.rulesets[self.activeRuleset] = params[0]
-    return Response(ResponseCode.OK, f"Set Quotes Channel to \"{params[0]}\".")
-  # End of __quotesChannel()
 
-  def __roundLimit(self, params:list[str]) -> Response:
+  def setQuoteChannel(self, channel:str) -> Response:
     """Sets the channel that the bot scrapes quote from.
     Args:
-      params (list[str]): A string broken into tokens indicating the parameters of the command.
-      Should include the number of rounds to play. Check Docs/command_grammar.md for full details.
+      channel (str): The ID of the channel to scrape quotes from.
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    if(len(params) == 0):
-      return Response(ResponseCode.BAD_PARAMETERS, "Invalid Parameters: No round number given.")
-    elif(params[0].lower() == "none"):
+    # TODO: Check if channel exists
+
+    self.rulesets[self.activeRuleset].quotesChannel = channel
+    return Response(ResponseCode.OK, f"Set Quotes Channel to \"{channel}\".")
+  # End of setQuoteChannel()
+
+  def setRoundLimit(self, limit:int | None) -> Response:
+    """Limits the number of rounds the next session can have.
+    Args:
+      limit (int | None): The number of rounds the next session can have.
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
+    """
+    if limit == None:
       self.rulesets[self.activeRuleset].roundLimit = -1
       return Response(ResponseCode.OK, "Removed round Limit")
-    elif(params[0].isdigit()):
-      self.rulesets[self.activeRuleset].roundLimit = int(params[0])
-      return Response(ResponseCode.OK, f"Set round limit to {params[0]}")
-    return Response(ResponseCode.BAD_PARAMETERS, "Invalid Parameters: Invalid round number.")
-  # End of __roundLimit()
+    self.rulesets[self.activeRuleset].roundLimit = limit
+    return Response(ResponseCode.OK, f"Set round limit to {limit}")
+  # End of setRoundLimit()
 
-  def __gameType(self, params:list[str]) -> Response:
-    """Sets the channel that the bot scrapes quote from.
+  def allowAliases(self, allow:bool) -> Response:
+    """Sets whether or not the next session should scrape quotes with aliases of players, or just player names.
     Args:
-      params (list[str]): A string broken into tokens indicating the parameters of the command.
-      Should include the number type of game to play. Check Docs/command_grammar.md for full details.
+      allow (bool): whether or not the next session should scrape quotes with aliases of players, or just player names.
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    if(len(params) == 0):
-      return Response(ResponseCode.BAD_PARAMETERS, "Invalid Parameters: No round number given.")
-    elif(params[0].lower() in GAMETYPES_STR):
-      return # TODO
-    
-    return Response(ResponseCode.BAD_PARAMETERS, "Invalid Parameters: Invalid round number.")
-    
-  # End of __gameType()
+    self.rulesets[self.activeRuleset].allowAliases = allow
+    if allow:
+      return Response(ResponseCode.OK, )
+  # End of allowAliases()
 
-  def __allowAliases(self, params:list[str]) -> Response:
-    
-    pass
-  # End of __allowAliases()
+  def setScrapeFrom(self, scrapeFrom:int|None) -> Response:
+    """Sets the date and time to scrape dates from.
+    Args:
+      scrapeFrom (int | None): The Unix timestamp of the date and time to scrape from.  
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
+    """
+    if scrapeFrom == None:
+      self.rulesets[self.activeRuleset].scrapeFrom = -1
+      return Response(ResponseCode.OK, "Scraping from 0000-01-01 00:00:00")
+    self.rulesets[self.activeRuleset].scrapeFrom = scrapeFrom
+    return ResponseCode(ResponseCode.OK, f"Scraping from {dt.fromtimestamp(scrapeFrom).strftime('%Y-%m-%d %H:%M:%S')}.") 
+  # End of setScrapeFrom()
 
-  def __scrapeFrom(self, params:list[str]) -> Response:
+  def setScrapeTo(self, scrapeTo:int|None) -> Response:
+    """Sets the date and time to scrape dates from.
+    Args:
+      scrapeTo (int | None): The Unix timestamp of the date and time to scrape to.  
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
+    """
+    if scrapeTo == None:
+      self.rulesets[self.activeRuleset].scrapeTo = -1
+      return Response(ResponseCode.OK, "Scraping to 9999-12-31 23:59:59")
+    self.rulesets[self.activeRuleset].scrapeTo = scrapeTo
+    return ResponseCode(ResponseCode.OK, f"Scraping to {dt.fromtimestamp(scrapeTo).strftime('%Y-%m-%d %H:%M:%S')}.")
+  # End of setScrapeTo()
 
-    pass
-  # End of __scrapeFrom()
-
-  def __scrapeTo(self, params:list[str]) -> Response:
-    pass
-  # End of __scrapeTo()
-
-  def __scrapeBetween(self, params:list[str]) -> None:
-    pass
-  # End of __scrapeBetween()
+  def setScrapeBetween(self, scrapeFrom:int|None, scrapeTo:int|None) -> Response:
+    """Sets the dates and times to scrape dates between.
+    Args:
+      scrapeFrom (int | None): The Unix timestamp of the date and time to scrape from.  
+      scrapeTo (int | None): The Unix timestamp of the date and time to scrape to.  
+    Returns:
+      Response: Whether or not the operation was successful, and a message that can be returned to the user.
+    """
+    f = scrapeFrom(scrapeFrom)
+    t = scrapeTo(scrapeTo)
+    return Response(ResponseCode.OK, f + "\n" + t)
+  # End of setScrapeBetween()
 # End of SettingsManager
