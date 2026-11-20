@@ -6,7 +6,6 @@ from App.Helpers.Response import Response, ResponseCode
 
 from random import randint
 from datetime import datetime
-from time import strftime
 
 ## CLASSES ##
 class StateManager():
@@ -36,7 +35,7 @@ class StateManager():
   # End of __init__()
   
   ## PUBLIC METHODS ##
-  def nextRound(self) -> Response:
+  def play(self) -> Response:
     """Runs the next round of the current game.
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.

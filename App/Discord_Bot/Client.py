@@ -4,13 +4,15 @@ from discord.message import Message
 from discord.channel import TextChannel
 from time import time
 
-from App.Database import Database
+from App.Command_Manager.Help_Registry import HELP_REGISTER, _help
+from App.Command_Manager.Player_Registry import PLAYER_REGISTER
+from App.Command_Manager.Settings_Registry import SETTINGS_REGISTER
+from App.Command_Manager.State_Registry import STATE_REGISTER
 from App.Discord_Bot.Scraper import Scraper
 from App.Game_Manager.SettingsManager import SettingsManager
 from App.Helpers.Response import *
 from App.Game_Manager.PlayerManager import PlayerManager
 from App.Game_Manager.StateManager import StateManager
-from App.Command_Parser.Parser import Parser
 
 
 ## CLASSES ##
@@ -49,91 +51,28 @@ class Client():
       message (Message): The message that has been sent to the client.
     """
     # Get commands and params
-    tokenisedMessage = shlex.split(message.content)[1:]
-    if len(tokenisedMessage) == 0:
-      self.sendMessage(message.channel, self.__help())
+    tokens = shlex.split(message.content)[1:]
+    if len(tokens) == 0:
+      self.sendMessage(message.channel, _help())
       return
-    
-    # Match commands to their respective functions.
-    res:Response
-    try:
-      match(tokenisedMessage[0].lower):
-        case "/createplayer":     # Player Commands
-          name = Parser.parseName(tokenisedMessage[1:])
-          res = self.players.createPlayer(name)
-        case "/createalias":
-          name, aliases, flags = Parser.parseNameAliasesAndFlags(tokenisedMessage[1:])
-          res = self.players.createAlias(name, aliases, flags)
-        case "/addplayer":
-          name, flags = Parser.parseNameAndFlags(tokenisedMessage[1:])
-          res = self.players.addPlayer(name, flags)
-        case "/deleteplayer":
-          name, flags = Parser.parseNameAndFlags(tokenisedMessage[1:])
-          res = self.players.deletePlayer(name, flags)
-        case "/deletealias":
-          name, flags = Parser.parseNameAndFlags(tokenisedMessage[1:])
-          res = self.players.deleteAlias(name, flags)
-        case "/removeplayer":
-          name, flags = Parser.parseNameAndFlags(tokenisedMessage[1:])
-          res = self.players.removePlayer(name, flags)
-        case "/listplayers":
-          res = self.players.listPlayers()
-        case "/listactive":
-          res = self.players.listActivePlayers()
-        case "/inspectplayer":
-          name, flags = Parser.parseNameAndFlags(tokenisedMessage[1:])
-          res = self.players.inspectPlayer(name, flags)
-        
-        
-        case "/quotechannel":     # Settings Commands
-          channel = Parser.parseName(tokenisedMessage[1:])
-          res = self.settings.setQuoteChannel(channel)
-        case "/roundlimit":
-          limit = Parser.parseNumber(tokenisedMessage[1:])
-          res = self.settings.setRoundLimit(limit)
-        case "/allowaliases":
-          allow = Parser.parseBoolean(tokenisedMessage[1:])
-          res = self.settings.allowAliases(allow)
-        case "/scrapefrom":
-          timestamp = Parser.parseDateTime(tokenisedMessage[1:])
-          res = self.settings.setScrapeFrom(timestamp)
-        case "/scrapeto":
-          timestamp = Parser.parseDateTime(tokenisedMessage[1:])
-          res = self.settings.setScrapeTo(timestamp)
-        case "/scrapebetween":
-          fromstamp, tostamp = Parser.parseDateTimes(tokenisedMessage[1:])
-          res = self.settings.setScrapeBetween(fromstamp, tostamp)
-        case "/saveruleset":
-          name = Parser.parseName(tokenisedMessage[1:])
-          res = self.settings.saveRuleset(name)
-        case "/loadruleset":
-          name = Parser.parseName(tokenisedMessage[1:])
-          res = self.settings.loadRuleset(name)
-        case "/deleteruleset":
-          name, flags = Parser.parseNameAndFlags(tokenisedMessage[1:])
-          res = self.settings.deleteRuleset(name, flags)
-        case "/listrulesets":
-          res = self.settings.listRulesets()
-        case "/inspectruleset":
-          name, flags = Parser.parseNameAndFlags(tokenisedMessage[1:])
-          res = self.settings.inspectRuleset()
 
-
-        case "/start":
-          return
-        case "/next":             # State Commands
-          return
-        case "/end":
-          return
-        case "/help":             # Help Commands
-          self.sendMessage(message.channel, self.__help(tokenisedMessage[1:]))
-          return
-        case _:
-          self.sendMessage(message.channel, Response(ResponseCode.BAD_REQUEST, f"""Unknown command \"{tokenisedMessage[0]}\".
-                           Use \"/help\" for a list of all commands."""))
-    except TypeError as e:
-      res = Response(ResponseCode.BAD_REQUEST, e)  
-    self.sendMessage(message.channel, res)
+    # TODO: Game_Manager Caching
+    if (handler := HELP_REGISTER.get(tokens[0])) != None:
+      res = handler(tokens[1:])
+    elif (handler := PLAYER_REGISTER.get(tokens[0])) != None:
+      res = handler(self.players, tokens[1:])
+    elif (handler := SETTINGS_REGISTER.get(tokens[0])) != None:
+      res = handler(self.settings, tokens[1:])
+    elif (handler := STATE_REGISTER.get(tokens[0])) != None:
+      res = handler(self.state, tokens[1:])
+    else:
+      res = Response(ResponseCode.BAD_REQUEST, f"Unknown command \"{tokens[0]}\". Use /help for a list of commands.")
+      
+    if type(res) == list[ResponseCode]:
+      for r in res:
+        self.sendMessage(message.channel, r)
+    else:
+      self.sendMessage(message.channel, r)
   # End of on_message()
 
   async def sendMessage(self, channel:TextChannel, message:Response) -> None:

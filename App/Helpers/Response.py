@@ -39,14 +39,3 @@ class Response():
     return f"{self.responseCode}: {self.message}"
   # End of responseString()
 # End of Response
-
-## GLOBALS ##
-# TODO: Fill Out Help Messages
-HELPDEFAULT   = Response(ResponseCode.OK,
-                         """PLACEHOLDER: HELPDEFAULT""")
-HELPPLAYERS   = Response(ResponseCode.OK,
-                         """PLACEHOLDER: HELPPLAYERS""")
-HELPSETTINGS  = Response(ResponseCode.OK,
-                         """PLACEHOLDER: HELPSETTINGS""")
-HELPSTATE     = Response(ResponseCode.OK,
-                         """PLACEHOLDER: HELPSTATE""")
