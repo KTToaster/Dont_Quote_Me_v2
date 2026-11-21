@@ -55,7 +55,6 @@ def _removePlayer(players:PlayerManager, args:list[str]) -> Response:
     name, flags = Parser.parseNameAndFlags(args)
   except SyntaxError as e:
     return Response(ResponseCode.BAD_REQUEST, e.msg)
-  
   return players.removePlayer(name, flags)
 # End of _removePlayer()
 

@@ -200,4 +200,8 @@ class SettingsManager():
     t = scrapeTo(scrapeTo)
     return Response(ResponseCode.OK, f + "\n" + t)
   # End of setScrapeBetween()
+
+  def getActiveRuleset(self) -> Ruleset:
+    return self.rulesets[self.activeRuleset]
+  # End of getActiveRuleset()
 # End of SettingsManager

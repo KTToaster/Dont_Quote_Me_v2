@@ -1,28 +1,35 @@
 ## IMPORTS ##
 import asyncio
+from os import getenv
 import discord
 from time import time
 from typing import overload
 from discord.message import Message
+from dotenv import load_dotenv
 
-from App.Database import Database
 from Discord_Bot import *
-from App.Helpers.Response import Response
+from App.Helpers.Response import Response, ResponseCode
+from App.Helpers import stringifyArray
 
 ## CLASSES ##
 class Bot(discord.Client):
   """The Discord Bot that interacts with the API.
   """
-
   ## VALUES ##
   API_KEY:str # The API Key associated with the Discord Bot.
+
+  ## CONSTRUCTOR ##
+  def __init__(self):
+    self.__loadAPIKey()
+  # End of __init__()
 
   ## PUBLIC METHODS ##
   @overload
   async def on_ready(self) -> None:
     """Initialisation steps to make when the Bot connects to the Discord API.
     """
-    print("Don't Quote Me Bot Online")
+    print("Don't Quote Me Bot Online.\nKnown Clients: ")
+    print(stringifyArray(self.listClients()))
     self.__checkCache()
   # End of on_ready() 
 
@@ -35,9 +42,8 @@ class Bot(discord.Client):
     # Ignore own messages
     if(message.author.id == self.user.id):
       return
-
-    print("Received Message:", " "*4, message)
     
+    print("Received Message:", " "*4, message) 
     # Ignore anything before command word (!DQM)
     commandIndex:int
     try:
@@ -121,7 +127,6 @@ class Bot(discord.Client):
     Returns:
       list[Client]: The list of the oldest objects in the cache. 
     """
-
     # Remove anything timed out.
     timedOut:list[int] = []
     for id, client in clientCache.items():
@@ -144,16 +149,16 @@ class Bot(discord.Client):
     Returns:
       list[int]: All the IDs of the clients in the database
     """
-    # TODO Send SQL command
-    pass
   # End of listClients()
 
   ## PRIVATE METHODS ##
   def __loadAPIKey(self) -> None:
     """Loads the Bot's API key from the .env file. 
     """
-    # TODO: Read .env file
-    pass
+    if(load_dotenv()):
+      self.API_KEY = getenv("DISCORD_API_KEY")
+      return Response(ResponseCode.OK)
+    return Response(ResponseCode.NOT_FOUND, """Environment file could not be found.""")
   # End of loadAPIKey()
 
   async def __checkCache(self) -> None:

@@ -26,20 +26,15 @@ class Client():
   state:StateManager        # The object that handles the game state for this guild.
   scraper:Scraper           # The object that can scrape this guild.
   lastActivity:float        # The last time the guild was communicated with. 
-  gameIndex:int             # Counts the number of games that have been played by this client.
   
   ## CONSTRUCTOR ##
-  def __init__(self, id:int, loadVals:bool=True):
+  def __init__(self, id:int):
     """Creates a Client Object.
     Args:
       id (int): The ID of the guild that is being communicated with.
       loadVals (bool, optional): whether or not the client should load it's values from the database. Defaults to True.
     """
     self.ID = id
-    if(loadVals):
-      pass
-    else:
-      self.gameIndex = 0
     self.lastActivity = time()
   # End of __init__()
   
@@ -55,16 +50,24 @@ class Client():
     if len(tokens) == 0:
       self.sendMessage(message.channel, _help())
       return
+    tokens[0] = tokens[0].lower()
 
-    # TODO: Game_Manager Caching
     if (handler := HELP_REGISTER.get(tokens[0])) != None:
       res = handler(tokens[1:])
     elif (handler := PLAYER_REGISTER.get(tokens[0])) != None:
-      res = handler(self.players, tokens[1:])
+      if(self.state == None):
+        res = handler(self.__getPlayers(), tokens[1:])
+      else:
+        res = ResponseCode(ResponseCode.FORBIDDEN, "Player details cannot be modified during a game. Use /end to end the current session and modify players.")
     elif (handler := SETTINGS_REGISTER.get(tokens[0])) != None:
-      res = handler(self.settings, tokens[1:])
+      if(self.state == None):
+        res = handler(self.__getSettings(), tokens[1:])
+      else:
+        res = ResponseCode(ResponseCode.FORBIDDEN, "Settings cannot be modified during a game. Use /end to end the current session and modify settings.")
     elif (handler := STATE_REGISTER.get(tokens[0])) != None:
-      res = handler(self.state, tokens[1:])
+      res = handler(self.__getState())
+      if  tokens[0] == "/end" and res.responseCode == 200:
+        self.state = None
     else:
       res = Response(ResponseCode.BAD_REQUEST, f"Unknown command \"{tokens[0]}\". Use /help for a list of commands.")
       
@@ -72,7 +75,7 @@ class Client():
       for r in res:
         self.sendMessage(message.channel, r)
     else:
-      self.sendMessage(message.channel, r)
+      self.sendMessage(message.channel, res)
   # End of on_message()
 
   async def sendMessage(self, channel:TextChannel, message:Response) -> None:
@@ -84,30 +87,47 @@ class Client():
     channel.send(message.message)
   # End of sendMessage()
 
-  def __loadPlayers(self) -> Response:
-    pass
-  # End of __loadPlayers()
+  def __getPlayers(self) -> PlayerManager:
+    if self.players != None:
+      return self.players
+    # TODO: load from DB
+  # End of __getPlayers()
 
-  def __loadSettings(self) -> Response:
-    pass
-  # End of __loadSettings()
+  def __getSettings(self) -> SettingsManager:
+    if self.settings != None:
+      return self.settings
+    # TODO: load from DB
+  # End of __getSettings()
+
+  def __getState(self) -> StateManager:
+    if self.state != None:
+      return self.state
+    self.state = StateManager(self.ID,  self.__getSettings().getActiveRuleset(), self.__getPlayers().getActivePlayers())
+    self.__deloadPlayers()
+    self.__deloadSettings()
+    return self.state
+
+  # End of __getState()
 
   def __deloadPlayers(self) -> Response:
-    if(self.players == None):
+    if self.players == None:
       return Response(ResponseCode.NOT_MODIFIED)
     # TODO: save and deload players
     pass
   # End of __deloadPlayers()
 
   def __deloadSettings(self) -> Response:
-    if(self.settings == None):
+    if self.settings == None:
       return Response(ResponseCode.NOT_MODIFIED)
     # TODO: save and deload settings
     pass
   # End of __deloadSettings()
 
-  def __deloadState() -> None:
-    pass
+  def __deloadState(self) -> None:
+    if self.state == None:
+      return Response(ResponseCode.NOT_MODIFIED)
+    self.state = None
+    return Response(ResponseCode.OK)
   # End of __deloadState()
 
   async def __sync(self) -> None:

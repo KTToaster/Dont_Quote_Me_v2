@@ -13,25 +13,19 @@ class StateManager():
   """
   ## VALUES ##
   lastQuote:Quote|None        # The last quote that was used in the game
-  availableQuotes:list[Quote] # The quotes that can be used in the rounds.
-  ruleset:Ruleset             # The rules that the game has to follow.
+  settings:Ruleset            # The rules that the game has to follow.
   players:dict[str,set[str]]  # The players that can be quoted.
   roundNumber:int             # The round number the game is on.
-  newest:int                  # The timestamp of the most recent quote.
+  scraper:Scraper             # The scraper attached to this object.
 
   ## CONSTRUCTOR ##
-  def __init__(self, ruleset:Ruleset, players:dict[str,set[str]]):
+  def __init__(self, guild_id:int, settings:Ruleset, players:dict[str,set[str]]):
     self.lastQuote = None
-    self.ruleset = ruleset
+    self.settings = settings
     self.players = players
     self.roundNumber = 0
-
-    self.availableQuotes = Scraper.scrapeQuotes(ruleset.quotesChannel, 
-                                                ruleset.scrapeFrom, 
-                                                ruleset.scrapeTo,
-                                                players)
-    
-    self.newest = self.availableQuotes[-1].sent
+    self.scraper = Scraper(guild_id)
+    self.scraper.scrapeQuotes(self.settings, self.players)
   # End of __init__()
   
   ## PUBLIC METHODS ##
@@ -40,26 +34,7 @@ class StateManager():
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    lastDetails = self.__lastQuoteToString()
-
-    if(self.roundNumber > self.ruleset.roundLimit):
-      return Response(ResponseCode.REDIR_END, "Round limit reached.\n")
-    self.roundNumber += 1
-
-    if(len(self.availableQuotes) == 0):
-      # Try to get more quotes
-      self.availableQuotes = Scraper.scrapeQuotes(self.ruleset.quotesChannel,
-                                                  self.newest, 
-                                                  self.ruleset.scrapeTo,
-                                                  self.players)
-      if(len(self.availableQuotes) == 0):
-        return Response(ResponseCode.REDIR_END, "No more available quotes.\n")
-
-    # Print this round's quote
-    quoteNum = randint(0, len(self.availableQuotes)-1)
-    self.lastQuote = self.availableQuotes[quoteNum]
-    self.availableQuotes.pop(quoteNum)
-    return Response(ResponseCode.OK, lastDetails+f"*Round {self.roundNumber}*\n{self.lastQuote.quote}")
+    
   # End of nextRound()
   
   def endGame(self) -> Response:
@@ -67,6 +42,7 @@ class StateManager():
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
+    Scraper.clearQuotes()
     return(ResponseCode.OK, "Game Over. Thank you for playing.")
   # End of endGame()
 

@@ -3,7 +3,7 @@ USE dontquotemeDB;
 
 CREATE TABLE clients(
   guild_id INTEGER PRIMARY KEY,
-  game_index INTEGER
+  last_activity FLOAT
 );
 CREATE TABLE players(
   guild_id INTEGER NOT NULL,
@@ -27,12 +27,13 @@ CREATE TABLE rulesets(
   strict_names BOOLEAN,
   channel_id INTEGER
 );
-CREATE TABLE quotes(
-  guild_id INTEGER NOT NULL,
-  message_id INTEGER NOT NULL,
-  PRIMARY KEY(guild_id, message_id),
-  player_name VARCHAR(255) NOT NULL,
-  quote_string TEXT NOT NULL,
-  context_string TEXT NOT NULL,
-  game_index INTEGER
-);
+
+-- Convert to separate NoSQL/SQLite DB
+-- CREATE TABLE quotes(
+--   guild_id INTEGER NOT NULL,
+--   message_id INTEGER NOT NULL,
+--   PRIMARY KEY(guild_id, message_id),
+--   player_name VARCHAR(255) NOT NULL,
+--   quote_string TEXT NOT NULL,
+--   context_string TEXT NOT NULL
+-- );

@@ -180,6 +180,12 @@ class PlayerManager():
     return Response(ResponseCode.OK, message)
   # End of inspectPlayer()
 
+  def getActivePlayers(self) -> dict[str,set[str]]:
+    res = {}
+    for player in self.activePlayers():
+      res[player] = self.allPlayers[player]
+    return res
+  # End of getActivePlayers()
 
   ## PRIVATE METHODS ##
   def __matchPlayers(self, pattern:str, strict:bool=False, activeOnly:bool=False, raw:bool=False) -> list[str]:

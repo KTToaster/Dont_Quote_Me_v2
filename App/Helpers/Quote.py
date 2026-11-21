@@ -1,6 +1,8 @@
 ## IMPORTS ##
 from dataclasses import dataclass
 
+## CONSTANTS ##
+QUOTE_TIMEOUT = 3600  # The number of seconds to wait before removing the cached quotes of a client.
 
 ## CLASSES ##
 @dataclass
