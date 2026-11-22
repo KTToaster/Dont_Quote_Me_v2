@@ -2,7 +2,7 @@
 from App.Discord_Bot.Scraper import Scraper
 from App.Game_Manager.SettingsManager import Ruleset
 from App.Helpers.Quote import Quote
-from App.Helpers.Response import Response, ResponseCode
+from App.Helpers.Response import Response, Status
 
 from random import randint
 from datetime import datetime
@@ -43,7 +43,7 @@ class StateManager():
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
     Scraper.clearQuotes()
-    return(ResponseCode.OK, "Game Over. Thank you for playing.")
+    return(Status.OK, "Game Over. Thank you for playing.")
   # End of endGame()
 
   ## PRIVATE METHODS ##

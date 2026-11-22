@@ -16,7 +16,7 @@ class Scraper():
   # End of __init__()
 
   ## PUBLIC METHODS ##
-  def scrapeQuotes(self, settings:Ruleset, players:dict[str,list[str]]) -> Response:
+  def scrapeQuotes(self, settings:Ruleset, players:dict[str,list[str]]) -> None:
     """Collects all the valid quotes in a channel and stores them in a local NoSQL database.
     Args:
       settings (Ruleset): The settings the scraper should follow when scraping quotes
@@ -26,7 +26,7 @@ class Scraper():
     """
   # End of scrapeQuotes()
 
-  def popQuote(self) -> Quote | Response:
+  def popQuote(self) -> Quote:
     """Fetches a quote from the NoSQL database and removes it.
     Returns:
       Quote: Quote returned from the database
@@ -34,7 +34,7 @@ class Scraper():
     """ 
   # End of getQuote()
 
-  def clearQuotes(self) -> Response:
+  def clearQuotes(self) -> None:
     """Removes all the remaining quotes in the NoSQL database.
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.

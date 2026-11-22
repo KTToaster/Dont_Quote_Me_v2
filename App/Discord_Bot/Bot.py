@@ -8,7 +8,7 @@ from discord.message import Message
 from dotenv import load_dotenv
 
 from Discord_Bot import *
-from App.Helpers.Response import Response, ResponseCode
+from App.Helpers.Response import Response
 from App.Helpers import stringifyArray
 
 ## CLASSES ##
@@ -40,7 +40,7 @@ class Bot(discord.Client):
       message (Message): the message received from the discord server.
     """
     # Ignore own messages
-    if(message.author.id == self.user.id):
+    if message.author.id == self.user.id:
       return
     
     print("Received Message:", " "*4, message) 
@@ -50,15 +50,15 @@ class Bot(discord.Client):
       commandIndex = message.content.upper().index("!DQM") 
     except ValueError:
       return
-    if(commandIndex != 0 and message.content[commandIndex-1] == '\\'): # Ignore Escaped Command Words
+    if commandIndex != 0 and message.content[commandIndex-1] == '\\': # Ignore Escaped Command Words
       return
     message.content = message.content[commandIndex:]
 
     # Delegate to client
     guildID = message.guild.id
-    if(guildID in clientCache): # Check cache first to prevent wasted messages to the DB.
+    if guildID in clientCache: # Check cache first to prevent wasted messages to the DB.
       clientCache[guildID].lastActivity = time()
-    elif(guildID in self.listClients()):
+    elif guildID in self.listClients():
       self.cacheClient(guildID)
     else:
       self.storeClient(guildID)
@@ -67,55 +67,48 @@ class Bot(discord.Client):
   # End of on_message() 
 
   @staticmethod
-  def storeClient(clientID:int) -> Response:
+  def storeClient(clientID:int) -> None:
     """Stores a client in the game's database.
     Args:
       clientID (int): The ID of the client to store in the game's database. Should be the same as the guild ID provided by discord.
-    Returns:
-      Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
     # TODO Insert client into database
-    pass
   # End of storeClient()
 
   @staticmethod
-  def deleteClient(clientID:int) -> Response:
+  def deleteClient(clientID:int) -> None:
     """Deletes a client currently stored in the game's database.
     Removes all reference of the client, including any objects that use it as a partial key.
     If the client is currently cached, it will also remove the client from the cache.
     Args:
       clientID (int): The ID of the client to remove from the game's database. Should be the same as the guild ID provided by discord.
-    Returns:
-      Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
     # TODO: Delete client from database
-    clientCache.pop(clientID)
+    clientCache.pop(clientID) # Remove from cache as well
   # End of deleteClient()
   
   @staticmethod
-  def cacheClient(clientID:int) -> Response:
+  def cacheClient(clientID:int) -> None:
     """Moves a client from the game's database into the cache.
     If the client is already in the cache, it resets it's timer.
     Args:
       clientID (int): The ID of the client to cache. Should be the same as the guild ID provided by discord.
-    Returns:
-      Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    #TODO: Get Object Details from Datbase
-    
-    #TODO: Create Client Object in Cache
-    pass
+    if clientID not in clientCache:
+      clientCache[clientID] = Client(clientID)
+    clientCache[clientID].lastActivity = time()
   # End of cacheClient()
 
   @staticmethod
-  def uncacheClient(clientID:int) -> Response:
+  def uncacheClient(clientID:int) -> None:
     """Removes a client from the game's cache, but leaves it in the game's database.
     Args:
       clientID (int): The ID of the client to uncache. Should be the same as the guild ID provided by discord.
-    Returns:
-      Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    #TODO: Update the database values with the cache
+    clientCache[clientID].deloadState()
+    clientCache[clientID].deloadSettings()
+    clientCache[clientID].deloadPlayers()
+    # TODO: Update last activity in DB
     clientCache.pop(clientID)
   # End of uncacheClient()
 
@@ -130,14 +123,14 @@ class Bot(discord.Client):
     # Remove anything timed out.
     timedOut:list[int] = []
     for id, client in clientCache.items():
-      if(time() - client.lastActivity > CACHE_TIMEOUT):
+      if time() - client.lastActivity > CACHE_TIMEOUT:
         timedOut.append(id) # Store timed out and delete after the dict has been iterated through - prevents RunTimeErrors.
     for id in timedOut:
       clientCache.pop(id)
 
     # Find eviction candidates.
     toEvict = len(clientCache) - (CACHE_LENGTH - 1)
-    if(toEvict <= 0): # Check if eviction is needed.
+    if toEvict <= 0: # Check if eviction is needed.
       return []
     evictionCandidates = sorted(clientCache.values(), key=lambda client: client.lastActivity)
       
@@ -155,10 +148,12 @@ class Bot(discord.Client):
   def __loadAPIKey(self) -> None:
     """Loads the Bot's API key from the .env file. 
     """
-    if(load_dotenv()):
+    if load_dotenv():
       self.API_KEY = getenv("DISCORD_API_KEY")
-      return Response(ResponseCode.OK)
-    return Response(ResponseCode.NOT_FOUND, """Environment file could not be found.""")
+      if self.API_KEY == None:
+        raise NameError("DISCORD_API_KEY not found in .env file.")
+      return
+    raise FileNotFoundError("Could not find .env file.")
   # End of loadAPIKey()
 
   async def __checkCache(self) -> None:

@@ -1,9 +1,10 @@
 ## IMPORTS ##
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 ## CLASSES ##
-class ResponseCode(Enum):
+class Status(Enum):
   """The Response Codes the DQM Client can return.
   Based off of the HTTP response status codes.
   """
@@ -28,14 +29,14 @@ class Response():
   """A dataclass object that holds a success/error code of a response, and a message that can be returned to the user. 
   """
   ## VALUES ##
-  responseCode:ResponseCode # The code that the operation responds with.
-  message:str|None          # The message attached to the code.
+  status:Status # The code that the operation responds with.
+  message:Any   # The message attached to the code.
 
   def responseString(self) -> str:
     """Formats the response to show both the code and the message.
     Returns:
       str: The formatted response.
     """
-    return f"{self.responseCode}: {self.message}"
+    return f"{self.status}: {self.message}"
   # End of responseString()
 # End of Response

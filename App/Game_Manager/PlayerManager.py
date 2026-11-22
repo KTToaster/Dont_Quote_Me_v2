@@ -1,6 +1,6 @@
 ## IMPORTS ##
 from App.Helpers import stringifyArray
-from App.Helpers.Response import Response, ResponseCode
+from App.Helpers.Response import Response, Status
 
 from fnmatch import fnmatch
 
@@ -33,13 +33,13 @@ class PlayerManager():
     """
     # Check player can be added
     if self.__matchPlayers(player, False, False, True):
-      return Response(ResponseCode.BAD_REQUEST, f"Cannot add player as a player already has this name.")
+      return Response(Status.BAD_REQUEST, f"Cannot add player as a player already has this name.")
     if len(self.allPlayers) > MAX_ACTIVE_PLAYERS:
-      return Response(ResponseCode.FORBIDDEN, f"Maximum number of players reached. Max: {MAX_PLAYERS}.")
+      return Response(Status.FORBIDDEN, f"Maximum number of players reached. Max: {MAX_PLAYERS}.")
 
     self.allPlayers[player] = set()
     self.allPlayers[player].add(player)
-    return Response(ResponseCode.OK, f"Created player \"{player}\".")
+    return Response(Status.OK, f"Created player \"{player}\".")
   # End of createPlayer()
   
   def createAlias(self, player:str, alias:str, *flags:str) -> Response:
@@ -53,7 +53,7 @@ class PlayerManager():
     """
     # Check alias can be added
     if len(self.allPlayers[player]) >= MAX_ALIASES:
-      return Response(ResponseCode.FORBIDDEN, f"Could not add \"{alias}\" to {player} as the alias limit has been reached.") 
+      return Response(Status.FORBIDDEN, f"Could not add \"{alias}\" to {player} as the alias limit has been reached.") 
 
     # Check alias is unique
     for name, existingAliases in self.allPlayers.items():
@@ -61,11 +61,11 @@ class PlayerManager():
         if "force" in flags and alias != name:
           self.allPlayers[name].remove(alias)
         else: 
-          return Response(ResponseCode.BAD_REQUEST, f"Could not add \"{alias}\" to {player}, as it already belongs to {name}.")
+          return Response(Status.BAD_REQUEST, f"Could not add \"{alias}\" to {player}, as it already belongs to {name}.")
 
     # Add Alias
     self.allPlayers[player].add(alias)
-    return Response(ResponseCode.OK, f"Added alias \"{alias}\" to {player}.")
+    return Response(Status.OK, f"Added alias \"{alias}\" to {player}.")
   # End of createAlias()
   
   def addPlayer(self, pattern:str, *flags:str) -> Response:
@@ -84,8 +84,8 @@ class PlayerManager():
       message += f"Added \"{player}\" to the next session.\n"
 
     if(message == ""):
-      return Response(ResponseCode.NOT_FOUND, f"No player(s) found matching \"{pattern}\".")
-    return Response(ResponseCode.OK, message)
+      return Response(Status.NOT_FOUND, f"No player(s) found matching \"{pattern}\".")
+    return Response(Status.OK, message)
   # End of addPlayer()
 
   def deletePlayer(self, pattern:str, *flags:str) -> Response:
@@ -106,8 +106,8 @@ class PlayerManager():
         message += f"Deleted player \"{player}\".\n"
         
     if(message == ""):
-      return Response(ResponseCode.NOT_FOUND, f"No player(s) found matching \"{pattern}\".")
-    return Response(ResponseCode.OK, message)
+      return Response(Status.NOT_FOUND, f"No player(s) found matching \"{pattern}\".")
+    return Response(Status.OK, message)
   # End of deletePlayer()
 
   def deleteAlias(self, pattern:str, *flags:str) -> Response:
@@ -129,8 +129,8 @@ class PlayerManager():
           message += f"Removed alias \"{alias}\" from \"{name}\".\n"
 
     if(message == ""):
-      return Response(ResponseCode.NOT_FOUND, f"No player(s) found matching \"{pattern}\".")
-    return Response(ResponseCode.OK, message)
+      return Response(Status.NOT_FOUND, f"No player(s) found matching \"{pattern}\".")
+    return Response(Status.OK, message)
   # End of deleteAlias()
 
   def removePlayer(self, pattern:str, *flags:str) -> Response:
@@ -146,20 +146,20 @@ class PlayerManager():
       self.activePlayers.remove(player)
       message += f"Removed {player}.\n"
     if(message == ""):
-      return Response(ResponseCode.NOT_FOUND, f"No player(s) found matching \"{pattern}\".")
-    return Response(ResponseCode.OK, message)
+      return Response(Status.NOT_FOUND, f"No player(s) found matching \"{pattern}\".")
+    return Response(Status.OK, message)
   # End of removePlayer()
 
   def listPlayers(self) -> Response:
     """Lists all the players associated with this client in the game's database.
     """
-    return Response(ResponseCode.OK, stringifyArray(self.allPlayers.keys(), "\n"))
+    return Response(Status.OK, stringifyArray(self.allPlayers.keys(), "\n"))
   # End of listPlayers()
 
   def listActivePlayers(self) -> Response:
     """Lists all the players that will be quoted in the next game.
     """
-    return Response(ResponseCode.OK, stringifyArray(self.activePlayers, "\n"))
+    return Response(Status.OK, stringifyArray(self.activePlayers, "\n"))
   # End of listActivePlayers()
 
   def inspectPlayer(self, pattern:str, *flags:str) -> Response:
@@ -176,8 +176,8 @@ class PlayerManager():
       message += f"AKA: {stringifyArray(self.allPlayers[player])}\n\n"
 
     if(message == ""):
-      return Response(ResponseCode.NOT_FOUND, f"No player(s) found matching \"{pattern}\".")
-    return Response(ResponseCode.OK, message)
+      return Response(Status.NOT_FOUND, f"No player(s) found matching \"{pattern}\".")
+    return Response(Status.OK, message)
   # End of inspectPlayer()
 
   def getActivePlayers(self) -> dict[str,set[str]]:

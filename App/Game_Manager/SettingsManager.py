@@ -4,7 +4,7 @@ from enum import Enum
 from datetime import datetime as dt
 from fnmatch import fnmatch
 
-from App.Helpers.Response import Response, ResponseCode
+from App.Helpers.Response import Response, Status
 
 ## CONSTANTS ##
 MAX_RULESETS=8  # The maximum number of rulesets each server is allowed
@@ -57,11 +57,11 @@ class SettingsManager():
     """
     if name == None or name == "":
       self.rulesets[self.activeRuleset.name] = self.activeRuleset
-      return Response(ResponseCode.OK, f"Updated \"{self.activeRuleset.name}\" to current rules.")
+      return Response(Status.OK, f"Updated \"{self.activeRuleset.name}\" to current rules.")
     if not name in self.rulesets and self.rulesets+1 > MAX_RULESETS:
-      return Response(ResponseCode.FORBIDDEN, f"Could not create new ruleset \"{name}\" from current rules as the maximum number of rulesets ({MAX_RULESETS}) has been reached.")
+      return Response(Status.FORBIDDEN, f"Could not create new ruleset \"{name}\" from current rules as the maximum number of rulesets ({MAX_RULESETS}) has been reached.")
     self.rulesets[name] = self.activeRuleset
-    return Response(ResponseCode.OK, f"Updated \"{self.activeRuleset.name}\" to current rules.")
+    return Response(Status.OK, f"Updated \"{self.activeRuleset.name}\" to current rules.")
   # End of saveRuleset()
 
   def loadRuleset(self, name:str) -> Response:
@@ -72,9 +72,9 @@ class SettingsManager():
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
     if not name in self.rulesets:
-      return Response(ResponseCode.BAD_REQUEST, f"Could not load ruleset \"{name}\" as it does not exist.")
+      return Response(Status.BAD_REQUEST, f"Could not load ruleset \"{name}\" as it does not exist.")
     self.activeRuleset = name
-    return Response(ResponseCode.OK, f"Using ruleset \"{name}\".")
+    return Response(Status.OK, f"Using ruleset \"{name}\".")
     pass
   # End of loadRuleset()
 
@@ -94,7 +94,7 @@ class SettingsManager():
           continue
       self.rulesets.pop(ruleset)
       message += f"Deleted ruleset \"{ruleset}\".\n"
-    return Response(ResponseCode.OK, message)
+    return Response(Status.OK, message)
   # End of deleteRuleset()
 
   def listRulesets(self) -> Response:
@@ -105,7 +105,7 @@ class SettingsManager():
     message = ""
     for ruleset in self.rulesets:
       message += ruleset + "\n"
-    return Response(ResponseCode.OK, message)
+    return Response(Status.OK, message)
   # End of listRulesets()
 
   def inspectRuleset(self, pattern:str|None, *flags) -> Response:
@@ -131,7 +131,7 @@ class SettingsManager():
     # TODO: Check if channel exists
 
     self.rulesets[self.activeRuleset].quotesChannel = channel
-    return Response(ResponseCode.OK, f"Set Quotes Channel to \"{channel}\".")
+    return Response(Status.OK, f"Set Quotes Channel to \"{channel}\".")
   # End of setQuoteChannel()
 
   def setRoundLimit(self, limit:int|None) -> Response:
@@ -143,9 +143,9 @@ class SettingsManager():
     """
     if limit == None or limit < 0:
       self.rulesets[self.activeRuleset].roundLimit = -1
-      return Response(ResponseCode.OK, "Removed round Limit")
+      return Response(Status.OK, "Removed round Limit")
     self.rulesets[self.activeRuleset].roundLimit = limit
-    return Response(ResponseCode.OK, f"Set round limit to {limit}")
+    return Response(Status.OK, f"Set round limit to {limit}")
   # End of setRoundLimit()
 
   def allowAliases(self, allow:bool) -> Response:
@@ -157,7 +157,7 @@ class SettingsManager():
     """
     self.rulesets[self.activeRuleset].allowAliases = allow
     if allow:
-      return Response(ResponseCode.OK, )
+      return Response(Status.OK, )
   # End of allowAliases()
 
   def setScrapeFrom(self, scrapeFrom:int|None) -> Response:
@@ -169,9 +169,9 @@ class SettingsManager():
     """
     if scrapeFrom == None:
       self.rulesets[self.activeRuleset].scrapeFrom = -1
-      return Response(ResponseCode.OK, "Scraping from 0000-01-01 00:00:00")
+      return Response(Status.OK, "Scraping from 0000-01-01 00:00:00")
     self.rulesets[self.activeRuleset].scrapeFrom = scrapeFrom
-    return ResponseCode(ResponseCode.OK, f"Scraping from {dt.fromtimestamp(scrapeFrom).strftime('%Y-%m-%d %H:%M:%S')}.") 
+    return Status(Status.OK, f"Scraping from {dt.fromtimestamp(scrapeFrom).strftime('%Y-%m-%d %H:%M:%S')}.") 
   # End of setScrapeFrom()
 
   def setScrapeTo(self, scrapeTo:int|None) -> Response:
@@ -183,9 +183,9 @@ class SettingsManager():
     """
     if scrapeTo == None:
       self.rulesets[self.activeRuleset].scrapeTo = -1
-      return Response(ResponseCode.OK, "Scraping to 9999-12-31 23:59:59")
+      return Response(Status.OK, "Scraping to 9999-12-31 23:59:59")
     self.rulesets[self.activeRuleset].scrapeTo = scrapeTo
-    return ResponseCode(ResponseCode.OK, f"Scraping to {dt.fromtimestamp(scrapeTo).strftime('%Y-%m-%d %H:%M:%S')}.")
+    return Status(Status.OK, f"Scraping to {dt.fromtimestamp(scrapeTo).strftime('%Y-%m-%d %H:%M:%S')}.")
   # End of setScrapeTo()
 
   def setScrapeBetween(self, scrapeFrom:int|None, scrapeTo:int|None) -> Response:
@@ -198,7 +198,7 @@ class SettingsManager():
     """
     f = scrapeFrom(scrapeFrom)
     t = scrapeTo(scrapeTo)
-    return Response(ResponseCode.OK, f + "\n" + t)
+    return Response(Status.OK, f + "\n" + t)
   # End of setScrapeBetween()
 
   def getActiveRuleset(self) -> Ruleset:

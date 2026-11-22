@@ -50,6 +50,7 @@ class Client():
     if len(tokens) == 0:
       self.sendMessage(message.channel, _help())
       return
+    self.lastActivity = time()
     tokens[0] = tokens[0].lower()
 
     if (handler := HELP_REGISTER.get(tokens[0])) != None:
@@ -58,20 +59,20 @@ class Client():
       if(self.state == None):
         res = handler(self.__getPlayers(), tokens[1:])
       else:
-        res = ResponseCode(ResponseCode.FORBIDDEN, "Player details cannot be modified during a game. Use /end to end the current session and modify players.")
+        res = Status(Status.FORBIDDEN, "Player details cannot be modified during a game. Use /end to end the current session and modify players.")
     elif (handler := SETTINGS_REGISTER.get(tokens[0])) != None:
       if(self.state == None):
         res = handler(self.__getSettings(), tokens[1:])
       else:
-        res = ResponseCode(ResponseCode.FORBIDDEN, "Settings cannot be modified during a game. Use /end to end the current session and modify settings.")
+        res = Status(Status.FORBIDDEN, "Settings cannot be modified during a game. Use /end to end the current session and modify settings.")
     elif (handler := STATE_REGISTER.get(tokens[0])) != None:
       res = handler(self.__getState())
-      if  tokens[0] == "/end" and res.responseCode == 200:
-        self.state = None
+      if  tokens[0] == "/end" and res.status == 200:
+        self.__deloadState()
     else:
-      res = Response(ResponseCode.BAD_REQUEST, f"Unknown command \"{tokens[0]}\". Use /help for a list of commands.")
+      res = Response(Status.BAD_REQUEST, f"Unknown command \"{tokens[0]}\". Use /help for a list of commands.")
       
-    if type(res) == list[ResponseCode]:
+    if type(res) == list[Status]:
       for r in res:
         self.sendMessage(message.channel, r)
     else:
@@ -87,6 +88,25 @@ class Client():
     channel.send(message.message)
   # End of sendMessage()
 
+  def deloadPlayers(self) -> None:
+    if self.players == None:
+      return
+    # TODO: save and deload players
+    pass
+  # End of __deloadPlayers()
+
+  def deloadSettings(self) -> None:
+    if self.settings == None:
+      return
+    # TODO: save and deload settings
+    pass
+  # End of __deloadSettings()
+
+  def deloadState(self) -> None:
+    self.state = None
+  # End of __deloadState()
+
+  ## PRIVATE METHODS ##
   def __getPlayers(self) -> PlayerManager:
     if self.players != None:
       return self.players
@@ -108,27 +128,6 @@ class Client():
     return self.state
 
   # End of __getState()
-
-  def __deloadPlayers(self) -> Response:
-    if self.players == None:
-      return Response(ResponseCode.NOT_MODIFIED)
-    # TODO: save and deload players
-    pass
-  # End of __deloadPlayers()
-
-  def __deloadSettings(self) -> Response:
-    if self.settings == None:
-      return Response(ResponseCode.NOT_MODIFIED)
-    # TODO: save and deload settings
-    pass
-  # End of __deloadSettings()
-
-  def __deloadState(self) -> None:
-    if self.state == None:
-      return Response(ResponseCode.NOT_MODIFIED)
-    self.state = None
-    return Response(ResponseCode.OK)
-  # End of __deloadState()
 
   async def __sync(self) -> None:
     """Periodically updates the database with the changes made to the cached object.
