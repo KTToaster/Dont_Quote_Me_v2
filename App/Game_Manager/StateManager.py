@@ -25,6 +25,7 @@ class StateManager():
     self.players = players
     self.roundNumber = 0
     self.scraper = Scraper(guild_id)
+    # TODO: check if there are quotes in the NoSQL DB before scraping new ones.
     self.scraper.scrapeQuotes(self.settings, self.players)
   # End of __init__()
   
@@ -34,7 +35,14 @@ class StateManager():
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
+    if(self.settings.quotesChannel == None):
+      return Response(Status.FAILED_DEPENDENCY, "Cannot get quotes as the Quote Channel is undefined. Use /help settings for more information.")
+
+    self.roundNumber += 1
+    if self.roundNumber > self.settings.roundLimit:
+      return self.endGame()
     
+    return Response(Status.OK, self.__lastQuoteToString() + f"Round {self.roundNumber}:\n\"" + self.lastQuote.quote + "\"")
   # End of nextRound()
   
   def endGame(self) -> Response:
@@ -43,7 +51,7 @@ class StateManager():
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
     Scraper.clearQuotes()
-    return(Status.OK, "Game Over. Thank you for playing.")
+    return Response(Status.OK, self.__lastQuoteToString() + "Game Over. Thank you for playing.")
   # End of endGame()
 
   ## PRIVATE METHODS ##
@@ -53,9 +61,9 @@ class StateManager():
       str: The formatted string constructed from the last quote's details.
     """
     lastDetails = ""
-    if(self.lastQuote != None):
+    if self.lastQuote != None:
       lastDetails += "Player: " + self.lastQuote.quoted + "\n"
-      if(self.lastQuote.context != None):
+      if self.lastQuote.context != None:
         lastDetails += "Context: " + self.lastQuote.context + "\n"
       lastDetails += "Sent: " + datetime.fromtimestamp(self.lastQuote.sent).strftime('%Y-%m-%d %H:%M:%S') + "\n\n"
     return lastDetails

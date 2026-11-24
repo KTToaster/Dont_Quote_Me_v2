@@ -16,9 +16,10 @@ class Status(Enum):
   REDIR_END=330       # A request to use next has been redirected to end the game.
 
   # CLIENT ERRORS #
-  FORBIDDEN=403       # The client's request has bee rejected as they do not have permission.
-  NOT_FOUND=404       # A file that the User has reqnuested could not be found.
-  BAD_REQUEST=400     # Variation of BAD_REQUEST, a command the user sent was unknown. 
+  BAD_REQUEST=400       # A command the user sent was unknown or invalid. 
+  FORBIDDEN=403         # The client's request has bee rejected as they do not have permission.
+  NOT_FOUND=404         # A file that the User has requested could not be found.
+  FAILED_DEPENDENCY=424 # The request cannot be satisfied as a dependency has not been met.
 
   # SERVER ERRORS #
   INTERNAL_ERROR=500  # An error occurred within the server.

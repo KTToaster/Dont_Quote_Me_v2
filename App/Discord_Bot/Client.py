@@ -8,8 +8,9 @@ from App.Command_Manager.Help_Registry import HELP_REGISTER, _help
 from App.Command_Manager.Player_Registry import PLAYER_REGISTER
 from App.Command_Manager.Settings_Registry import SETTINGS_REGISTER
 from App.Command_Manager.State_Registry import STATE_REGISTER
+from App.Database import Database
 from App.Discord_Bot.Scraper import Scraper
-from App.Game_Manager.SettingsManager import SettingsManager
+from App.Game_Manager.SettingsManager import GameType, Ruleset, SettingsManager
 from App.Helpers.Response import *
 from App.Game_Manager.PlayerManager import PlayerManager
 from App.Game_Manager.StateManager import StateManager
@@ -89,17 +90,41 @@ class Client():
   # End of sendMessage()
 
   def deloadPlayers(self) -> None:
+    """Saves the cached PlayerManager to the Database and removes it from memory.
+    """
     if self.players == None:
       return
-    # TODO: save and deload players
-    pass
+    playerVals = []
+    aliasVals = []
+    for name, aliases in self.players.allPlayers.items():
+      playerVals.append((self.ID, name, name in self.players.activePlayers))
+      for alias in aliases:
+        aliasVals.append((self.ID, alias, name))
+    Database.execute("DELETE FROM players WHERE guild_id = %s", (self.ID), commit=False)
+    if playerVals != []:
+      Database.executeMany("""INSERT INTO players 
+      (guild_id, player_name, is_active) 
+      VALUES (%s, %s, %s);""", playerVals, False)
+    if aliasVals != []:
+      Database.executeMany("""INSERT INTO aliases 
+      (guild_id, alias_name, player_name) 
+      VALUES (%s, %s, %s);""", aliasVals)
+    self.players = None
   # End of __deloadPlayers()
 
   def deloadSettings(self) -> None:
+    """Saves the cached SettingsManager to the Database and removes it from memory.
+    """
     if self.settings == None:
       return
-    # TODO: save and deload settings
-    pass
+    rulesetVals = []
+    for name, ruleset in self.settings.rulesets.items():
+      rulesetVals.append((self.ID, name, name==self.settings.activeRuleset, ruleset.roundLimit, ruleset.gameType.value, ruleset.allowAliases, ruleset.quotesChannel, ruleset.scrapeFrom, ruleset.scrapeTo))
+    Database.execute("DELETE FROM rulesets WHERE guild_id = %s;", (self.ID), commit=False)
+    Database.executeMany("""INSERT INTO rulesets 
+    (guild_id, ruleset_name, is_active, round_limit, game_type, strict_names, channel_id, scrape_from, scrape_to) 
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);""", rulesetVals)
+    self.settings = None
   # End of __deloadSettings()
 
   def deloadState(self) -> None:
@@ -108,18 +133,58 @@ class Client():
 
   ## PRIVATE METHODS ##
   def __getPlayers(self) -> PlayerManager:
+    """Returns the current PlayerManager for this Client. 
+    If the PlayerManager is not cached, it will load it from the database and cache it.
+    If there is no PlayerManager in the database, it will create a new one and cache it.
+    Returns:
+      PlayerManager: The current PlayerManager for this client.
+    """
     if self.players != None:
       return self.players
-    # TODO: load from DB
+    allPlayers:dict[str,set[str]] = {}
+    activePlayers = set()
+    
+    for name, is_active, alias in Database.fetchAll(
+    """SELECT p.player_name, p.is_active, a.alias_name 
+    FROM players AS p LEFT JOIN aliases AS a 
+    ON a.guild_id = p.guild_id AND a.player_name = p.player_name 
+    WHERE p.guild_id = %s""", (self.ID)):
+      if name not in allPlayers:
+        allPlayers[name] = {name}
+      allPlayers[name].add(alias)
+      if is_active:
+        activePlayers.add(name)
+
+    self.players = PlayerManager(allPlayers, activePlayers)
+    return self.players
   # End of __getPlayers()
 
   def __getSettings(self) -> SettingsManager:
+    """Returns the current SettingsManager for this Client. 
+    If the SettingsManager is not cached, it will load it from the database and cache it.
+    If there is no SettingsManager in the database, it will create a new one and cache it.
+    Returns:
+      SettingsManager: The current SettingsManager for this client.
+    """
     if self.settings != None:
       return self.settings
-    # TODO: load from DB
+    rulesets:dict[str,Ruleset] = {}
+    activeRuleset = "Default"
+    for name, isActive, roundLimit, gameType, allowAliases, quotesChannel, scrapeFrom, scrapeTo in Database.fetchAll(
+    "SELECT * FROM rulesets WHERE guild_id = %s", (self.ID,)):
+      rulesets[name] = Ruleset(quotesChannel, name, roundLimit, GameType(gameType), allowAliases, scrapeFrom, scrapeTo)
+      if isActive:
+        activeRuleset = name
+    self.settings = SettingsManager(rulesets, activeRuleset)
+    return self.settings
   # End of __getSettings()
 
   def __getState(self) -> StateManager:
+    """Returns the current StateManager for this Client.
+    Un-caches the current PlayerManager and SettingsManager, as they cannot be accessed during gameplay.
+    Returns:
+      StateManager: The current StateManager for this Client.
+    """
     if self.state != None:
       return self.state
     self.state = StateManager(self.ID,  self.__getSettings().getActiveRuleset(), self.__getPlayers().getActivePlayers())

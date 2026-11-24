@@ -15,8 +15,8 @@ class GameType(Enum):
 
 @dataclass
 class Ruleset():
-  quotesChannel:str                       # The ID of the channel to scrape quotes from.
   name:str="Default"                      # The Name that identifies the ruleset
+  quotesChannel:int|None=None             # The ID of the channel to scrape quotes from.
   roundLimit:int=-1                       # The maximum number of rounds to play. When negative, there is no limit on the number of rounds to play. 
   gameType:GameType=GameType.FREE_FOR_ALL # The format of the game to play.
   allowAliases:bool=True                  # Whether or not to allow aliases while scraping.
@@ -32,18 +32,16 @@ class SettingsManager():
   activeRuleset:str
 
   ## CONSTRUCTOR ##
-  def __init__(self, rulesets:dict[str,Ruleset]|None=None, quotesChannel:str|None=None, activeRuleset:str="Default"):
-    if rulesets == None and quotesChannel == None:
-      raise AttributeError("Rulesets and channel cannot both be None.")
-    elif rulesets == None:
-      self.rulesets = {"Default": Ruleset(quotesChannel=quotesChannel, name="Default")}
+  def __init__(self, rulesets:dict[str,Ruleset]|None=None, activeRuleset:str="Default"):
+    if rulesets == None:
+      self.rulesets = {"Default": Ruleset(name="Default")}
       self.activeRuleset = "Default"
 
     self.rulesets = rulesets
     if activeRuleset in rulesets: 
-      self.activeRuleset = self.rulesets[activeRuleset]
+      self.activeRuleset = self.rulesets[activeRuleset].name
     else:
-      self.activeRuleset = self.rulesets["Default"]
+      self.activeRuleset = self.rulesets["Default"].name
 
   # End of __init__()
 
@@ -56,12 +54,12 @@ class SettingsManager():
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
     if name == None or name == "":
-      self.rulesets[self.activeRuleset.name] = self.activeRuleset
-      return Response(Status.OK, f"Updated \"{self.activeRuleset.name}\" to current rules.")
+      self.getActiveRuleset() = self.getActiveRuleset()
+      return Response(Status.OK, f"Updated \"{self.activeRuleset}\" to current rules.")
     if not name in self.rulesets and self.rulesets+1 > MAX_RULESETS:
       return Response(Status.FORBIDDEN, f"Could not create new ruleset \"{name}\" from current rules as the maximum number of rulesets ({MAX_RULESETS}) has been reached.")
-    self.rulesets[name] = self.activeRuleset
-    return Response(Status.OK, f"Updated \"{self.activeRuleset.name}\" to current rules.")
+    self.rulesets[name] = self.getActiveRuleset()
+    return Response(Status.OK, f"Updated \"{self.activeRuleset}\" to current rules.")
   # End of saveRuleset()
 
   def loadRuleset(self, name:str) -> Response:
@@ -94,6 +92,9 @@ class SettingsManager():
           continue
       self.rulesets.pop(ruleset)
       message += f"Deleted ruleset \"{ruleset}\".\n"
+    if self.activeRuleset not in self.rulesets:
+      self.activeRuleset = "Default"
+      message += f"Using ruleset \"Default\"."
     return Response(Status.OK, message)
   # End of deleteRuleset()
 
@@ -117,7 +118,7 @@ class SettingsManager():
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
     # TODO
-    message = f"{self.rulesets[self.activeRuleset]}\n"
+    message = f"{self.getActiveRuleset()}\n"
     return Response(Response.OK, message)
   # End of inspectRuleset()
 
@@ -130,7 +131,7 @@ class SettingsManager():
     """
     # TODO: Check if channel exists
 
-    self.rulesets[self.activeRuleset].quotesChannel = channel
+    self.getActiveRuleset().quotesChannel = int(channel[2:-1])
     return Response(Status.OK, f"Set Quotes Channel to \"{channel}\".")
   # End of setQuoteChannel()
 
@@ -142,9 +143,9 @@ class SettingsManager():
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
     if limit == None or limit < 0:
-      self.rulesets[self.activeRuleset].roundLimit = -1
+      self.getActiveRuleset().roundLimit = -1
       return Response(Status.OK, "Removed round Limit")
-    self.rulesets[self.activeRuleset].roundLimit = limit
+    self.getActiveRuleset().roundLimit = limit
     return Response(Status.OK, f"Set round limit to {limit}")
   # End of setRoundLimit()
 
@@ -155,7 +156,7 @@ class SettingsManager():
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
-    self.rulesets[self.activeRuleset].allowAliases = allow
+    self.getActiveRuleset().allowAliases = allow
     if allow:
       return Response(Status.OK, )
   # End of allowAliases()
@@ -168,9 +169,9 @@ class SettingsManager():
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
     if scrapeFrom == None:
-      self.rulesets[self.activeRuleset].scrapeFrom = -1
+      self.getActiveRuleset().scrapeFrom = -1
       return Response(Status.OK, "Scraping from 0000-01-01 00:00:00")
-    self.rulesets[self.activeRuleset].scrapeFrom = scrapeFrom
+    self.getActiveRuleset().scrapeFrom = scrapeFrom
     return Status(Status.OK, f"Scraping from {dt.fromtimestamp(scrapeFrom).strftime('%Y-%m-%d %H:%M:%S')}.") 
   # End of setScrapeFrom()
 
@@ -182,9 +183,9 @@ class SettingsManager():
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
     if scrapeTo == None:
-      self.rulesets[self.activeRuleset].scrapeTo = -1
+      self.getActiveRuleset().scrapeTo = -1
       return Response(Status.OK, "Scraping to 9999-12-31 23:59:59")
-    self.rulesets[self.activeRuleset].scrapeTo = scrapeTo
+    self.getActiveRuleset().scrapeTo = scrapeTo
     return Status(Status.OK, f"Scraping to {dt.fromtimestamp(scrapeTo).strftime('%Y-%m-%d %H:%M:%S')}.")
   # End of setScrapeTo()
 
@@ -202,6 +203,10 @@ class SettingsManager():
   # End of setScrapeBetween()
 
   def getActiveRuleset(self) -> Ruleset:
-    return self.rulesets[self.activeRuleset]
+    """Returns the ruleset object of the active ruleset.
+    Returns:
+      Ruleset: The active ruleset object.
+    """
+    return self.getActiveRuleset()
   # End of getActiveRuleset()
 # End of SettingsManager

@@ -181,6 +181,10 @@ class PlayerManager():
   # End of inspectPlayer()
 
   def getActivePlayers(self) -> dict[str,set[str]]:
+    """Returns the list of active players and their associated aliases.
+    Returns:
+      dict[str,set[str]]: The list of active players and their associated aliases.
+    """
     res = {}
     for player in self.activePlayers():
       res[player] = self.allPlayers[player]

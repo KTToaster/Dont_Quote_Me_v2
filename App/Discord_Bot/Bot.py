@@ -1,14 +1,14 @@
 ## IMPORTS ##
 import asyncio
-from os import getenv
 import discord
+from os import getenv
 from time import time
 from typing import overload
 from discord.message import Message
 from dotenv import load_dotenv
 
-from Discord_Bot import *
-from App.Helpers.Response import Response
+from App.Database import Database
+from App.Discord_Bot import *
 from App.Helpers import stringifyArray
 
 ## CLASSES ##
@@ -16,7 +16,7 @@ class Bot(discord.Client):
   """The Discord Bot that interacts with the API.
   """
   ## VALUES ##
-  API_KEY:str # The API Key associated with the Discord Bot.
+  API_KEY:str     # The API Key associated with the Discord Bot.
 
   ## CONSTRUCTOR ##
   def __init__(self):
@@ -72,7 +72,7 @@ class Bot(discord.Client):
     Args:
       clientID (int): The ID of the client to store in the game's database. Should be the same as the guild ID provided by discord.
     """
-    # TODO Insert client into database
+    Database.execute("INSERT INTO clients (guild_id, last_activity) VALUES (%s, %s)", (clientID, time()))
   # End of storeClient()
 
   @staticmethod
@@ -83,7 +83,7 @@ class Bot(discord.Client):
     Args:
       clientID (int): The ID of the client to remove from the game's database. Should be the same as the guild ID provided by discord.
     """
-    # TODO: Delete client from database
+    Database.execute("DELETE FROM clients WHERE guild_id = %s;", (clientID))
     clientCache.pop(clientID) # Remove from cache as well
   # End of deleteClient()
   
@@ -108,7 +108,7 @@ class Bot(discord.Client):
     clientCache[clientID].deloadState()
     clientCache[clientID].deloadSettings()
     clientCache[clientID].deloadPlayers()
-    # TODO: Update last activity in DB
+    Database.execute("UPDATE clients SET last_activity = %s WHERE guild_id = %s", (clientCache[clientID].lastActivity, clientID))
     clientCache.pop(clientID)
   # End of uncacheClient()
 
@@ -142,6 +142,7 @@ class Bot(discord.Client):
     Returns:
       list[int]: All the IDs of the clients in the database
     """
+    return Database.fetchAll("SELECT guild_id FROM clients")
   # End of listClients()
 
   ## PRIVATE METHODS ##

@@ -92,14 +92,10 @@ def _scrapeBetween(settings:SettingsManager, args:list[str]) -> Response:
   """
   f:int; t:int
   try:
-    if len(args) == 2:
-      f = Parser.parseDateTime([args[0]])
-      t = Parser.parseDateTime([args[1]])
-    elif len(args) >= 4:
-      f = Parser.parseDateTime(args[0:1])
-      t = Parser.parseDateTime(args[2:3])
-    else:
-      return Response(Status.BAD_REQUEST, "Ambiguous datetimes given.")
+    if len(args) < 4:
+      return Response(Status.BAD_REQUEST, "Not enough values given.")
+    f = Parser.parseDateTime(args[0:1] + args[4:])
+    t = Parser.parseDateTime(args[2:])
   except SyntaxError as e:
     return Response(Status.BAD_REQUEST, e.msg)
   return settings.setScrapeBetween(f, t)
