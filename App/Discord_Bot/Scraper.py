@@ -24,6 +24,7 @@ class Scraper():
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
+    # TODO
   # End of scrapeQuotes()
 
   def popQuote(self) -> Quote:
@@ -32,6 +33,7 @@ class Scraper():
       Quote: Quote returned from the database
       Response: A response code indicating an error, with a message that can be returned to the user.
     """ 
+    # TODO
   # End of getQuote()
 
   def clearQuotes(self) -> None:
@@ -39,5 +41,6 @@ class Scraper():
     Returns:
       Response: Whether or not the operation was successful, and a message that can be returned to the user.
     """
+    # TODO
   # End of clearQuotes()
 # End of Scraper

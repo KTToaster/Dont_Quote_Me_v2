@@ -1,5 +1,6 @@
 ## IMPORTS ##
 import shlex
+import asyncio
 from discord.message import Message
 from discord.channel import TextChannel
 from time import time
@@ -9,6 +10,7 @@ from App.Command_Manager.Player_Registry import PLAYER_REGISTER
 from App.Command_Manager.Settings_Registry import SETTINGS_REGISTER
 from App.Command_Manager.State_Registry import STATE_REGISTER
 from App.Database import Database
+from App.Discord_Bot import SYNC_TIMER
 from App.Discord_Bot.Scraper import Scraper
 from App.Game_Manager.SettingsManager import GameType, Ruleset, SettingsManager
 from App.Helpers.Response import *
@@ -27,6 +29,9 @@ class Client():
   state:StateManager        # The object that handles the game state for this guild.
   scraper:Scraper           # The object that can scrape this guild.
   lastActivity:float        # The last time the guild was communicated with. 
+  __playersSynced:bool      # Whether or not the PlayerManager has already been synchronised during the loop.
+  __settingsSynced:bool     # Whether or not the SettingsManager has already been synchronised during the loop.
+
   
   ## CONSTRUCTOR ##
   def __init__(self, id:int):
@@ -37,6 +42,7 @@ class Client():
     """
     self.ID = id
     self.lastActivity = time()
+    self.__sync()
   # End of __init__()
   
   
@@ -117,13 +123,7 @@ class Client():
     """
     if self.settings == None:
       return
-    rulesetVals = []
-    for name, ruleset in self.settings.rulesets.items():
-      rulesetVals.append((self.ID, name, name==self.settings.activeRuleset, ruleset.roundLimit, ruleset.gameType.value, ruleset.allowAliases, ruleset.quotesChannel, ruleset.scrapeFrom, ruleset.scrapeTo))
-    Database.execute("DELETE FROM rulesets WHERE guild_id = %s;", (self.ID), commit=False)
-    Database.executeMany("""INSERT INTO rulesets 
-    (guild_id, ruleset_name, is_active, round_limit, game_type, strict_names, channel_id, scrape_from, scrape_to) 
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);""", rulesetVals)
+    self.__syncSettings()
     self.settings = None
   # End of __deloadSettings()
 
@@ -141,21 +141,7 @@ class Client():
     """
     if self.players != None:
       return self.players
-    allPlayers:dict[str,set[str]] = {}
-    activePlayers = set()
-    
-    for name, is_active, alias in Database.fetchAll(
-    """SELECT p.player_name, p.is_active, a.alias_name 
-    FROM players AS p LEFT JOIN aliases AS a 
-    ON a.guild_id = p.guild_id AND a.player_name = p.player_name 
-    WHERE p.guild_id = %s""", (self.ID)):
-      if name not in allPlayers:
-        allPlayers[name] = {name}
-      allPlayers[name].add(alias)
-      if is_active:
-        activePlayers.add(name)
-
-    self.players = PlayerManager(allPlayers, activePlayers)
+    self.__syncPlayers()
     return self.players
   # End of __getPlayers()
 
@@ -191,12 +177,50 @@ class Client():
     self.__deloadPlayers()
     self.__deloadSettings()
     return self.state
-
   # End of __getState()
 
-  async def __sync(self) -> None:
-    """Periodically updates the database with the changes made to the cached object.
+  def __syncPlayers(self) -> None:
+    """Updates the database with the changes made to the cache PlayerManager object. 
     """
-    pass
+    allPlayers:dict[str,set[str]] = {}
+    activePlayers = set()
+    for name, is_active, alias in Database.fetchAll(
+    """SELECT p.player_name, p.is_active, a.alias_name 
+    FROM players AS p LEFT JOIN aliases AS a 
+    ON a.guild_id = p.guild_id AND a.player_name = p.player_name 
+    WHERE p.guild_id = %s""", (self.ID)):
+      if name not in allPlayers:
+        allPlayers[name] = {name}
+      allPlayers[name].add(alias)
+      if is_active:
+        activePlayers.add(name)
+    self.players = PlayerManager(allPlayers, activePlayers)
+    self.__playersSynced = True
+  # End of __syncPlayers()
+
+  def __syncSettings(self) -> None:
+    """Updates the database with the changes made to the cache SettingsManager object. 
+    """
+    rulesetVals = []
+    for name, ruleset in self.settings.rulesets.items():
+      rulesetVals.append((self.ID, name, name==self.settings.activeRuleset, ruleset.roundLimit, ruleset.gameType.value, ruleset.allowAliases, ruleset.quotesChannel, ruleset.scrapeFrom, ruleset.scrapeTo))
+    Database.execute("DELETE FROM rulesets WHERE guild_id = %s;", (self.ID), commit=False)
+    Database.executeMany("""INSERT INTO rulesets 
+    (guild_id, ruleset_name, is_active, round_limit, game_type, strict_names, channel_id, scrape_from, scrape_to) 
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);""", rulesetVals)
+    self.__settingsSynced = True
+  # End of __syncSettings()
+
+  async def __sync(self) -> None:
+    """Periodically updates the database with the changes made to the cached objects.
+    """
+    while True:
+      asyncio.sleep(SYNC_TIMER)
+      if not self.__playersSynced:
+        self.__syncPlayers()
+      if not self.__settingsSynced:
+        self.__syncSettings()
+      self.__playersSynced = False
+      self.__settingsSynced = False
   # End of __sync()
 # End of Client
